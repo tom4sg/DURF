@@ -22,10 +22,27 @@ access_token = res.json()['token']
 def Get(uri):
     return get(f'{HOST}{uri}', headers={'Authorization': f'Bearer {access_token}'})
 
-# Example query: get BTS data
-res = Get('/api/artist/206557/where-people-listen')
-if res.status_code != 200:
-    print(f'ERROR: received a {res.status_code} instead of 200 from /api/artist/:id')
-    exit(1)
+# Get artist brief by name
+def getArtist(name):
+    return get(f'{HOST}/api/search?q={name}&type=artists', headers={'Authorization': f'Bearer {access_token}'})
 
-pprint(res.json())
+# Get artist ID by name
+def getArtistID(name):
+    data = getArtist(name).json()
+    artists = data.get('obj', {}).get('artists', [])
+    if not artists:
+        print(f"No artist found for '{name}'")
+        return None
+    return artists[0]['id']
+# def getArtistId(name):
+# Example query: get data
+# res = Get('/api/artist/3380')
+# res = getArtist('Lil Wayne')
+# if res.status_code != 200:
+#     print(f'ERROR: received a {res.status_code} instead of 200 from /api/artist/:id')
+#     exit(1)
+
+# pprint(res.json())
+
+res = getArtistID('Lil Wayne')
+pprint(res)
