@@ -1,3 +1,0 @@
-#!/bin/bash
-# Virtual environment activation script
-source env/bin/activate 
