@@ -4,6 +4,8 @@ from pprint import pprint
 import os
 from dotenv import load_dotenv
 import time
+from collections import defaultdict
+from datetime import datetime
 
 load_dotenv()
 
@@ -19,10 +21,6 @@ if res.status_code != 200:
 
 access_token = res.json()['token']
 
-# Define GET function using access token
-# def Get(uri):
-#     return get(f'{HOST}{uri}', headers={'Authorization': f'Bearer {access_token}'})
-
 def Get(uri, **kwargs):
     # sleep for 1 second to respect rate limit
     time.sleep(1)
@@ -34,28 +32,31 @@ def Get(uri, **kwargs):
 
 # Get artist brief by name
 def searchArtist(name):
-    return get(f'{HOST}/api/search?q={name}&type=artists', headers={'Authorization': f'Bearer {access_token}'})
+    res = Get("/api/search", q=name, type="artists")
+    if res.status_code != 200:
+        print(f"{res.status_code} from /api/search → {res.text}")
+        return None
+    return res
 
 # Get artist ID by name
 def getArtistID(name):
-    data = searchArtist(name).json()
+    response = searchArtist(name)
+    if not response:
+        return None
+    try:
+        data = response.json()
+    except Exception as e:
+        print(f"Failed to parse JSON for artist search: {e}")
+        return None
+
     artists = data.get('obj', {}).get('artists', [])
     if not artists:
         print(f"No artist found for '{name}'")
         return None
     return artists[0]['id']
-# def getArtistId(name):
-# Example query: get data
-# res = Get('/api/artist/3380')
-# res = getArtist('Lil Wayne')
-# if res.status_code != 200:
-#     print(f'ERROR: received a {res.status_code} instead of 200 from /api/artist/:id')
-#     exit(1)
 
-# pprint(res.json())
 def getArtistFromID(id):
     return get(f'{HOST}/api/artist/{id}', headers={'Authorization': f'Bearer {access_token}'})
-#/api/artist/:id/social-audience-stats
 
 def getArtistSocialStats(id, domain="instagram", audience_type="followers", stats_type="stat"):
     """
@@ -79,30 +80,42 @@ def getSpotifyStats(artist_id):
     print(f"{res.status_code} on {uri} → {res.text}")
     return None
 
-def print_time_series(ts, label, value_key="value"):
-    if not ts:
-        print(f"{label}: No data\n")
+def findSpotifyStreamsByTrackName(artist_id, track_name, artist_type="main", limit=100):
+    """
+    Search the artist's track catalog for a title and return its Spotify stream count.
+    - artist_type: "main", "featured", or omit for both
+    """
+    uri = f"/api/artist/{artist_id}/tracks"
+    res = Get(uri, limit=limit, artist_type=artist_type)
+    if res.status_code != 200:
+        print(f"{res.status_code} on {uri} → {res.text}")
+        return None
+
+    tracks = res.json().get("obj", [])
+    # simple case‐insensitive exact match; adapt to fuzzy if you like
+    for t in tracks:
+        if t.get("name", "").lower() == track_name.lower():
+            return t.get("cm_statistics", {}).get("sp_streams")
+    print(f"Track '{track_name}' not found in first {limit} results.")
+    return None
+
+def test_findSpotifyStreamsByTrackName():
+    artist_name = "SZA"
+    track_name = "Good Days"  # change to any known track
+
+    artist_id = getArtistID(artist_name)
+    if not artist_id:
+        print(f"Could not find artist ID for '{artist_name}'")
         return
 
-    print(f"\n--- {label} (time series) ---")
-    for point in ts:
-        date = point["timestp"][:10]
-        value = point[value_key]
-        print(f"{date}: {value:,}" if isinstance(value, int) else f"{date}: {value}")
+    print(f"\n🎵 Fetching Spotify stream count for '{track_name}' by {artist_name}")
+    streams = findSpotifyStreamsByTrackName(artist_id, track_name)
 
-artist_name = "SZA"
-artist_id = getArtistID(artist_name)
+    if streams is not None:
+        print(f"'{track_name}' has {streams:,} Spotify streams")
+    else:
+        print(f"Could not find stream data for '{track_name}'")
 
-if artist_id:
-    print(f"\nSpotify stats for {artist_name} (ID: {artist_id})")
+# Run test
+test_findSpotifyStreamsByTrackName()
 
-    stats = getSpotifyStats(artist_id)
-    pprint(stats)
-
-# === SUMMARY PRINT ===
-spotify_obj = stats.get("obj", {})
-
-followers_ts = spotify_obj.get("followers", [])
-listeners_ts = spotify_obj.get("listeners", [])
-ratio_ts     = spotify_obj.get("followers_to_listeners_ratio", [])
-popularity   = spotify_obj.get("popularity", [])
