@@ -77,6 +77,6 @@ for i in range(1863, len(chart_links)):
         compression="snappy",
         filesystem=fs
     )
-    print(f"    ✔ Wrote to s3://{s3_bucket_name}/{key}\n", flush=True)
+    print(f"    Wrote to s3://{s3_bucket_name}/{key}\n", flush=True)
 
 print("Finished scraping and writing to S3 Bucket", flush=True)
