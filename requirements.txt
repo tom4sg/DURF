@@ -4,3 +4,5 @@ python-dotenv>=1.0.0
 beautifulsoup4>=4.12.0
 dotenv
 lxml
+s3fs
+pyarrow
