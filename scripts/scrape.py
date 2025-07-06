@@ -41,11 +41,9 @@ s3_bucket_name = os.getenv("S3_BUCKET_NAME")
 s3_bucket_prefix = os.getenv("S3_BUCKET_PREFIX")
 fs = s3fs.S3FileSystem()
 
-print(chart_links[1862])
-# 20220803.html
+# iterate through charts and store in S3 Bucket
 
-
-for i in range(1863, len(chart_links)):
+for i in range(len(chart_links)):
 
     # Let's get endpoint so we can store the charts associated date
     endpoint = chart_links[i]
