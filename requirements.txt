@@ -6,3 +6,4 @@ dotenv
 lxml
 s3fs
 pyarrow
+boto3
