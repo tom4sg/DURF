@@ -16,13 +16,8 @@ headers = {
 response = requests.get(base_url + endpoint, headers=headers)
 
 data = response.json()
-
-#%%
-
-
-df = pd.DataFrame(data["data"])
-print(df.head())
-
 # %%
 
-pprint(data["data"]["daily"])
+df = pd.DataFrame(data["data"]["daily"])
+df
+# %%
