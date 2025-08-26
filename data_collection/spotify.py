@@ -23,6 +23,8 @@ headers = {
 
 # %%
 
-res = get("https://api.spotify.com/v1/artists/0TnOYISbd1XYRBk9myaseg/related-artists", headers=headers)
+res = get("https://api.spotify.com/v1/artists/0TnOYISbd1XYRBk9myaseg", headers=headers)
 pprint(res.json())
+
 # %%
+
