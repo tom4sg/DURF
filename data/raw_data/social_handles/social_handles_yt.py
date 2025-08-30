@@ -150,7 +150,6 @@ yt = {
     "Drake": "@DrakeOfficial",         # NOTE: his uploads are mostly via @DrakeVEVO
     "Beyonce": "@Beyonce",
     "Corey Kent": "@CoreyKent",
-    "Lil Nas": "@LilNasX",             # full stage name is Lil Nas X
     "Eminem": "@EminemMusic",
     "Cardi B": "@iamcardib",
     "Metallica": "@Metallica",

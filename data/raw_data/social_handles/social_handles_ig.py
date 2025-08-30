@@ -614,7 +614,6 @@ ig = {
     "LOCASH": "locash",
     "Lay Bankz": "laybankz",
     "Lewis Capaldi": "lewiscapaldi",
-    "Lil Nas": "lilnasx",                   # duplicate of Lil Nas X
     "Lil Nas X": "lilnasx",
     "Lizzo": "lizzobeeating",
     "Loe Shimmy": "loeshimmy",

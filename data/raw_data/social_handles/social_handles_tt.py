@@ -149,8 +149,7 @@ tt = {
     "Dylan Scott": "dylanscottcountry",
     "Drake": "drake",                        # not super active, but official
     "Beyonce": "beyonce",
-    "Corey Kent": "coreykent",
-    "Lil Nas": "lilnasx",                     # mapped to Lil Nas X
+    "Corey Kent": "coreykent",  
     "Eminem": "eminem",                       # not active, but official
     "Cardi B": "iamcardib",
     "Metallica": "metallica",
