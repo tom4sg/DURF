@@ -1,4 +1,4 @@
-,chart_week,current_week,title,performer,last_week,peak_pos,wks_on_chart,song_id
+,chart_week,current_week,title,performers,last_week,peak_pos,wks_on_chart,song_id
 0,2022-01-01,1,All I Want For Christmas Is You,Mariah Carey,1,1,50,All I Want For Christmas Is You — Mariah Carey
 1,2022-01-01,2,Rockin' Around The Christmas Tree,Brenda Lee,2,2,44,Rockin' Around The Christmas Tree — Brenda Lee
 2,2022-01-01,3,Jingle Bell Rock,Bobby Helms,4,3,41,Jingle Bell Rock — Bobby Helms
@@ -16641,7 +16641,7 @@
 39,2025-03-08,40,High Road,Koe Wetzel & Jessie Murph,46,22,38,High Road — Koe Wetzel & Jessie Murph
 40,2025-03-08,41,No One Noticed,The Marias,55,22,22,No One Noticed — The Marias
 41,2025-03-08,42,BMF,SZA,49,29,10,BMF — SZA
-42,2025-03-08,43,I Know Love,Tate McRae Featauring The Kid LAROI,-,43,1,I Know Love — Tate McRae Featauring The Kid LAROI
+42,2025-03-08,43,I Know Love,Tate McRae Featuring The Kid LAROI,-,43,1,I Know Love — Tate McRae Featuring The Kid LAROI
 43,2025-03-08,44,Dear God,Tate McRae,-,44,1,Dear God — Tate McRae
 44,2025-03-08,45,Wildflower,Billie Eilish,48,17,37,Wildflower — Billie Eilish
 45,2025-03-08,46,I Never Lie,Zach Top,61,38,23,I Never Lie — Zach Top
@@ -16771,7 +16771,7 @@
 69,2025-03-15,70,Heart Of A Woman,Summer Walker,80,57,19,Heart Of A Woman — Summer Walker
 70,2025-03-15,71,Dear God,Tate McRae,44,44,2,Dear God — Tate McRae
 71,2025-03-15,72,Call Me When You Break Up,"Selena Gomez, benny blanco & Gracie Abrams",58,58,2,"Call Me When You Break Up — Selena Gomez, benny blanco & Gracie Abrams"
-72,2025-03-15,73,I Know Love,Tate McRae Featauring The Kid LAROI,43,43,2,I Know Love — Tate McRae Featauring The Kid LAROI
+72,2025-03-15,73,I Know Love,Tate McRae Featuring The Kid LAROI,43,43,2,I Know Love — Tate McRae Featuring The Kid LAROI
 73,2025-03-15,74,4x4xU,Lainey Wilson,77,45,17,4x4xU — Lainey Wilson
 74,2025-03-15,75,Purple Lace Bra,Tate McRae,53,53,2,Purple Lace Bra — Tate McRae
 75,2025-03-15,76,Miss Possessive,Tate McRae,54,54,2,Miss Possessive — Tate McRae
