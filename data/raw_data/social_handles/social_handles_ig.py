@@ -36,7 +36,6 @@ ig = {
     "Billie Eilish": "billieeilish",
     "Harry Styles": "harrystyles",
     "Sabrina Carpenter": "sabrinacarpenter",
-    "Britney Spears": "britneyspears",
     "Katy Perry": "katyperry",
     "Lady Gaga": "ladygaga",
     "Doja Cat": "dojacat",
@@ -65,7 +64,6 @@ ig = {
     "Khalid": "thegr8khalid",
     "Tyler, The Creator": "feliciathegoat",
     "A$AP Rocky": "asaprocky",
-    "Frank Ocean": "blonded",
     "Lil Yachty": "lilyachty",
     "Young Thug": "thuggerthugger1",
     "Trippie Redd": "trippieredd",
@@ -87,9 +85,7 @@ ig = {
     "Chris Brown": "chrisbrownofficial",
     "Usher": "usher",
     "Tory Lanez": "torylanez",
-    "Bruno Mars": "brunomars",
     "JID": "jid",
-    "Cordae": "cordae",
     "Morgan Wallen": "morganwallen",
     "Luke Combs": "lukecombs",
     "Zach Bryan": "zachlanebryan",
@@ -114,7 +110,6 @@ ig = {
     "Ozuna": "ozuna",
     "Anuel AA": "anuel",
     "Daddy Yankee": "daddyyankee",
-    "Farruko": "farruko",
     "Rauw Alejandro": "rauwalejandro",
     "Feid": "feid",
     "Peso Pluma": "pesopluma",
@@ -126,7 +121,6 @@ ig = {
     "Anitta": "anitta",
     "Sebastian Yatra": "sebastianyatra",  # duplicate safeguard
     "TINI": "tinistoessel",
-    "Camilo": "camilo",
     "Manuel Turizo": "manuelturizo",
     "BTS": "bts.bighitofficial",
     "V": "thv",          # BTS V (Kim Taehyung)
@@ -146,9 +140,7 @@ ig = {
     "TWICE": "twicetagram",
     "SEVENTEEN": "saythename_17",
     "LE SSERAFIM": "le_sserafim",
-    "Foo Fighters": "foofighters",
     "Nirvana": "nirvana",
-    "Green Day": "greenday",
     "Red Hot Chili Peppers": "chilipeppers",
     "Paramore": "paramore",
     "The 1975": "the1975",
@@ -160,7 +152,6 @@ ig = {
     "Queen": "officialqueenmusic",
     "U2": "u2",
     "The Rolling Stones": "therollingstones",
-    "Gorillaz": "gorillaz",
     "David Guetta": "davidguetta",
     "Calvin Harris": "calvinharris",
     "Marshmello": "marshmello",
@@ -275,7 +266,6 @@ ig = {
     "Jelly Roll": "jellyroll615",
     "Jackson Dean": "thejacksondean",
     "Lee Brice": "leebricemusic",
-    "Elvie Shane": "elvieshanemusic",  # optional
     "Jon Pardi": "jonpardi",  # safeguard
     "Lainey Wilson": "laineywilsonmusic",  # safeguard
     "Gabby Barrett": "gabbybarrett_",  # safeguard
@@ -337,7 +327,6 @@ ig = {
     "Bakar": "bakarrrr",
     "Mitski": "mitskileaks",
     "Ryan Castro": "ryancastror",
-    "Charli XCX": "charli_xcx",   # catch both "Charli XCX" & "Charli xcx"
     "Coco Jones": "cocojones",
     "Ravyn Lenae": "ravynlenae",
     "Libianca": "libianca_",
@@ -380,21 +369,14 @@ ig = {
     "Chris Janson": "thechrisjanson",
     "Brett Young": "brettyoungmusic",
     "Scotty McCreery": "scottymccreery",  # safeguard, already exists
-    "Darius Rucker": "dariusrucker",  # if he shows in extended CSV
     "Old Dominion": "olddominionmusic",
     "Zac Brown Band": "zacbrownband",
     "Little Big Town": "littlebigtown",
-    "Florida Georgia Line": "floridageorgialine",  # in case they appear
-    "Brooks & Dunn": "brooksanddunn",  # ambiguous — could mean Brooks & Dunn or Garth Brooks
-    "Garth Brooks": "garthbrooks",  # if this is what your CSV row means
+    "Brooks & Dunn": "brooksanddunn",  # ambiguous — could mean Brooks & Dunn
     "Fifty Fifty": "we_fiftyfifty",
     "ILLIT": "illit_official",
     "KATSEYE": "katseyeofficial",
     "ATEEZ": "ateez_official_",
-    "STAYC": "stayc_highup",       # in case they appear in the full CSV
-    "IVE": "ivestarship",          # same
-    "IVE (아이브)": "ivestarship", # Korean variant, just in case
-    "ENHYPEN": "enhypen",          # in case
     "Good Neighbours": "goodneighboursband",  # safeguard
     "Hotel Ugly": "hotelugly",                # safeguard
     "Surf Curse": "surfcurse",                # safeguard
@@ -433,7 +415,6 @@ ig = {
     "Metallica": "metallica",              # safeguard
     "Nirvana": "nirvana",                  # safeguard
     "Red Hot Chili Peppers": "chilipeppers", # safeguard
-    "Green Day": "greenday",               # safeguard
     "Dylan Gossett": "dylangossettt",
     "Fridayy": "fridayy", 
     "Tee Grizzley": "teegrizzley",
@@ -560,7 +541,6 @@ ig = {
     "Alex Warren": "alexwarren",
     "Andre 3000": "andre3000",           # rarely posts, sometimes inactive
     "AnnenMayKantereit": "annenmaykantereit",   # German band
-    "BLEU": "bleuvandross",              # Yung Bleu
     "BabyChiefDoit": "",                 # underground, no verified IG
     "Bhad Bhabie": "bhadbhabie",
     "BigXthaPlug": "bigxthaplug",
@@ -568,7 +548,6 @@ ig = {
     "Bryan Martin": "bryanmartinofficial",
     "Carin Leon": "carinleonoficial",
     "Carlos Vives": "carlosvives",
-    "Charli xcx": "charli_xcx",          # alt stylization
     "Chase Matthew": "chasematthew",
     "Chayce Beckham": "chaycebeckhammusic",
     "Chloe": "chloebailey",              # solo from Chloe x Halle
@@ -588,8 +567,7 @@ ig = {
     "Forrest Frank": "forrestfrank",
     "Gelo": "",                          # ambiguous (no verified IG)
     "Gigi Perez": "gigiperezmusic",
-    "HUNTR": "",                         # no verified IG
-    "HUNTRX": "",                        # no verified IG
+    "HUNTR/X": "",                        # no verified IG
     "Hailey Whitters": "haileywhitters",
     "Hitkidd": "hitkidd",                # producer
     "Hozier": "hozier",

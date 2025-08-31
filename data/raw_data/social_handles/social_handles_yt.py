@@ -199,7 +199,6 @@ yt = {
     "Romeo Santos": "@RomeoSantos",
     "Omar Apollo": "@OmarApollo",
     "Little Big Town": "@LittleBigTown",
-    "BLEU": "@Bleu",                       # also known as Yung Bleu, official channel
     "EST Gee": "@ESTGee",
     "GloRilla": "@GloRilla",
     "Lil Nas X": "@LilNasX",
@@ -370,7 +369,6 @@ yt = {
     "Djo": "@Djo",                            # Joe Keery (of Stranger Things)
     "Tucker Wetmore": "@TuckerWetmore",
     "LE SSERAFIM": "@LESSERAFIM_official",
-    "twenty one pilots": "@twentyonepilots",
     "Pharrell": "@Pharrell",                  # solo Pharrell channel
     "Dasha": "@DashaMusic",
     "Kacey Musgraves": "@KaceyMusgraves",
@@ -479,17 +477,13 @@ yt = {
     "ATEEZ": "@ATEEZofficial",
     "Josh Ross": "@JoshRossMusic",
     "Saja Boys": "",                       # emerging/indie, no verified YouTube yet
-    "HUNTRX": "",                          # unclear/indie, no verified channel
-    "HUNTR": "",                           # same as above, possibly alt spelling
     "Rumi": "",                            # ambiguous (no official artist channel)
     "BabyChiefDoit": "",                   # very small/underground, not verified
     "G Herbo": "@gherbo",
     "JEONGYEON": "@twice",                 # Jeongyeon is part of TWICE → group channel
     "Disco Lines": "@DiscoLines",
     "Clipse": "@OfficialClipse",
-    "Tyler, the Creator": "@TylerTheCreator",
     "Ozzy Osbourne": "@OzzyOsbourne",
-    "jessie murph": "@JessieMurph",        # already mapped above as “Jessie Murph”
     "Twice": "@TWICE",                     # group channel
     "Dareyes de La Sierra": "@DareyesdelaSierraOficial",
     "Mariah the Scientist": "@MariahTheScientist",
@@ -540,17 +534,14 @@ yt = {
     "ATEEZ": "@ATEEZofficial",
     "Josh Ross": "@JoshRossMusic",
     "Saja Boys": "",                           # no official channel
-    "HUNTRX": "",                              # indie, not verified
-    "HUNTR": "",                               # indie, not verified
+    "HUNTR/X": "",                              
     "Rumi": "",                                # ambiguous
     "BabyChiefDoit": "",                       # no verified channel
     "G Herbo": "@gherbo",
     "JEONGYEON": "@TWICE",                     # member of TWICE → group channel
     "Disco Lines": "@DiscoLines",
     "Clipse": "@OfficialClipse",
-    "Tyler, the Creator": "@TylerTheCreator",
     "Ozzy Osbourne": "@OzzyOsbourne",
-    "Jessie Murph": "@JessieMurph",            # unify spelling
     "Twice": "@TWICE",
     "Dareyes de La Sierra": "@DareyesdelaSierraOficial",
     "Mariah the Scientist": "@MariahTheScientist",

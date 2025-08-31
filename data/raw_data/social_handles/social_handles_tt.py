@@ -199,7 +199,6 @@ tt = {
     "Romeo Santos": "romeosantos",
     "Omar Apollo": "omar.apollo",
     "Little Big Town": "littlebigtown",
-    "BLEU": "bleuvandross",                # Yung Bleu
     "EST Gee": "est.gee",
     "GloRilla": "glorillapimp",
     "Lil Nas X": "lilnasx",
@@ -370,7 +369,6 @@ tt = {
     "Machine Gun Kelly": "machinegunkelly",
     "Tucker Wetmore": "tuckerwetmore",
     "LE SSERAFIM": "lesserafim_official",
-    "twenty one pilots": "twentyonepilots",
     "Pharrell": "pharrell",
     "Dasha": "dashamusic",
     "Kacey Musgraves": "spaceykacey",
@@ -478,8 +476,7 @@ tt = {
     "ATEEZ": "ateez_official_",
     "Josh Ross": "joshrossmusic",
     "Saja Boys": "",                       # no TikTok
-    "HUNTRX": "",                          # no TikTok
-    "HUNTR": "",                           # no TikTok
+    "HUNTR/X": "",                          # no TikTok                         # no TikTok
     "Rumi": "",                            # ambiguous, no TikTok
     "BabyChiefDoit": "",                   # underground, no TikTok
     "G Herbo": "gherbo",
@@ -487,7 +484,6 @@ tt = {
     "Disco Lines": "discolines",
     "Clipse": "",                         # legacy hip-hop duo, no TikTok
     "Ozzy Osbourne": "ozzyosbourne",
-    "jessie murph": "jessiemurphhh",      # unify spelling with Jessie Murph
     "Twice": "twice_tiktok",              # official group account
     "Dareyes de La Sierra": "dareyesdelasierraoficial",
     "Mariah the Scientist": "mariahthescientist",
@@ -537,18 +533,14 @@ tt = {
     "Mariah Carey": "mariahcarey",
     "ATEEZ": "ateez_official_",
     "Josh Ross": "joshrossmusic",
-    "Saja Boys": "",                      # indie, no TikTok
-    "HUNTRX": "",                         # not on TikTok
-    "HUNTR": "",                          # not on TikTok
+    "Saja Boys": "",                      # indie, no TikTok                      # not on TikTok
     "Rumi": "",                           # ambiguous, no official TikTok
     "BabyChiefDoit": "",                  # underground, no TikTok
     "G Herbo": "gherbo",
     "JEONGYEON": "twice_tiktok_official", # part of TWICE → group channel
     "Disco Lines": "discolines",
     "Clipse": "",                          # legacy duo, no official TikTok
-    "Tyler, the Creator": "feliciathegoat",
     "Ozzy Osbourne": "ozzyosbourne",
-    "jessie murph": "jessiemurphhh",     # unify with Jessie Murph
     "Twice": "twice_tiktok_official",
     "Dareyes de La Sierra": "",          # no verified TikTok
     "Mariah the Scientist": "mariahthescientist",  # duplicate safeguard
