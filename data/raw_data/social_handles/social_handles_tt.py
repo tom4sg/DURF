@@ -100,9 +100,9 @@ tt = {
     "Rauw Alejandro": "rauwalejandro",
     "Lil Baby": "lilbaby",
     "BIA": "bia",
-    "42 Dugg": "42_dugggg",
-    "Chloe": "chloebailey",               # Chloe Bailey (of Chloe x Halle)
-    "Pusha T": "kingpush",
+    "42 Dugg": "",
+    "Chloe": "chloebaileywashere",               # Chloe Bailey (of Chloe x Halle)
+    "Pusha T": "pusha_t",
     "BRELAND": "breland",
     "Morgan Wallen": "morganwallen",
     "Lizzo": "lizzo",

@@ -100,6 +100,13 @@ ig = {
     "Rauw Alejandro": "rauwalejandro",
     "Lil Baby": "lilbaby",
     "BIA": "bia",
+    "42 Dugg": "42_dugggg",
+    "Chloe": "chloebailey",
+    "Pusha T": "kingpush",
+    "BRELAND": "breland",
+    "Morgan Wallen": "morganwallen",
+    "Lizzo": "lizzobeeating",
+    "Kay Flock": "officialkayflocka",
     "Taylor Swift": "taylorswift",
     "Ariana Grande": "arianagrande",
     "Selena Gomez": "selenagomez",
@@ -148,7 +155,6 @@ ig = {
     "Ty Dolla $ign": "tydollasign",
     "Usher": "usher",
     "Tory Lanez": "torylanez",
-    "Morgan Wallen": "morganwallen",
     "Luke Combs": "lukecombs",
     "Zach Bryan": "zachlanebryan",
     "Chris Stapleton": "chrisstapleton",
@@ -230,9 +236,7 @@ ig = {
     "Vince Guaraldi Trio": "vinceguaraldimusic",
     "NLE Choppa": "nlechoppamusic",   # duplicate safeguard
     "Megan Thee Stallion": "theestallion",  # duplicate safeguard
-    "42 Dugg": "42_dugggg",
     "DaBaby": "dababy",  # duplicate safeguard
-    "Kay Flock": "officialkayflocka",
     "6ix9ine": "6ix9ine",
     "SleazyWorld Go": "sleazyworldgo",
     "Moneybagg Yo": "moneybaggyo",
@@ -306,7 +310,6 @@ ig = {
     "Dareyes de La Sierra": "dareyesdelasierraoficial",
     "Oscar Maydon": "oscarmaydonn",
     "Tito Double P": "titodoublep",
-    "BRELAND": "breland",
     "Parker McCollum": "parkermccollum",
     "Jimmie Allen": "jimmieallen",
     "Megan Moroney": "megmoroney",
@@ -494,7 +497,6 @@ ig = {
     "CHRYSTAL": "chrystaltheartist",
     "Pimmie": "pimmie",
     "Dan + Shay": "danandshay",
-    "Chloe": "chloebailey",
     "Southside": "808mafiaboss",
     "4*TOWN (From Disney And Pixar's Turning Red)": "",  # fictional; no IG
     "Charli xcx": "charli_xcx",
@@ -593,7 +595,6 @@ ig = {
     "Lay Bankz": "laybankz",
     "Lewis Capaldi": "lewiscapaldi",
     "Lil Nas X": "lilnasx",
-    "Lizzo": "lizzobeeating",
     "Loe Shimmy": "loeshimmy",
     "Lola Young": "lolayoung",
     "MOLIY": "moliyofficial",
@@ -616,7 +617,6 @@ ig = {
     "OneRepublic": "onerepublic",
     "Pentatonix": "ptxofficial",
     "Pharrell": "pharrell",
-    "Pusha T": "kingpush",
     "RAYE": "raye",
     "Richy Mitch": "rmfb_band",          # Richy Mitch & the Coal Miners (band IG)
     "Rosalia": "rosalia.vt",
