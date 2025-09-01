@@ -300,28 +300,62 @@ ig = {
     "Feid": "feid",
     "Young Thug": "thuggerthugger1",
     "Olivia Rodrigo": "oliviarodrigo",
+    "Tainy": "tainy",
+    "Fall Out Boy": "falloutboy",
+    "FendiDa Rappa": "fendidarappa_",
+    "Myke Towers": "myketowers",
+    "Troye Sivan": "troyesivan",
+    "Ryan Castro": "ryancastrro",
+    "Rylo Rodriguez": "rylorodriguez",
+    "That Mexican OT": "thatmexicanot",
+    "Travis Scott": "travisscott",
+    "Chris Stapleton": "chrisstapleton",
+    "Diplo": "diplo",
+    "Charli xcx": "charli_xcx",
+    "Ryan Gosling": "",
+    "Tyler Childers": "timmytychilders",
+    "Ivan Cornejo": "ivancornejoo",
+    "Usher": "usher",
+    "Oliver Anthony Music": "oliver_anthony_music_",
+    "Warren Zeiders": "warrenzeiders",
+    "Dominic Fike": "dominicfike",
+    "Teddy Swims": "teddyswims",
+    "Victoria Monet": "victoriamonet",
+    "Calle 24": "calle24.oficial",
+    "Timbaland": "timbaland",
+    "Kenya Grace": "kenyagrace",
+    "Paul Russell": "paulrussell",
+    "Lil Tecca": "liltecca",
+    "Mitski": "mitskileaks",
+    "Maluma": "maluma",
+    "*NSYNC": "nsync",
+    "Tyla": "tyla",
+    "Rick Ross": "richforever",
+    "Dustin Lynch": "dustinlynch",
+    "The Citizens of Halloween": "",
+    "The Beatles": "thebeatles",
+    "Stray Kids": "realstraykids",
+    "Riley Green": "rileyduckman",
+    "310babii": "310babii",
+    "Andre 3000": "andre3000",
+    "BigXthaPlug": "bigxthaplug",
+    "Xavi": "xavioficial",
     "Ariana Grande": "arianagrande",
     "Katy Perry": "katyperry",
     "Lauv": "lauvsongs",
-    "Troye Sivan": "troyesivan",
     "J. Cole": "realcoleworld",
-    "Travis Scott": "travisscott",
     "Takeoff": "yrntakeoff",
     "Bryson Tiller": "brysontiller",
     "Khalid": "thegr8khalid",
     "A$AP Rocky": "asaprocky",
     "Playboi Carti": "playboicarti",
-    "Rick Ross": "richforever",
     "Nas": "nas",
     "Jay-Z": "jayz_official",   # note: rarely uses IG
     "Ty Dolla $ign": "tydollasign",
-    "Usher": "usher",
-    "Chris Stapleton": "chrisstapleton",
     "Kelsea Ballerini": "kelseaballerini",
     "Carly Pearce": "carlypearce",   # duplicate safeguard
     "Walker Hayes": "walkerhayes",   # duplicate safeguard
     "Russell Dickerson": "russelldickerson",  # duplicate safeguards
-    "Maluma": "maluma",
     "Natanael Cano": "natanael_cano",
     "Natti Natasha": "nattinatasha",
     "Sebastian Yatra": "sebastianyatra",  # duplicate safeguard
@@ -331,19 +365,16 @@ ig = {
     "Lisa": "lalalalisa_m",
     "Jisoo": "sooyaaa__",
     "Rosé": "roses_are_rosie",
-    "Stray Kids": "realstraykids",
     "SEVENTEEN": "saythename_17",
     "LE SSERAFIM": "le_sserafim",
     "Paramore": "paramore",
     "The 1975": "the1975",
     "The Killers": "thekillers",
-    "Fall Out Boy": "falloutboy",
     "Queen": "officialqueenmusic",
     "U2": "u2",
     "The Rolling Stones": "therollingstones",
     "Zedd": "zedd",
     "Skrillex": "skrillex",
-    "Diplo": "diplo",
     "Kygo": "kygomusic",
     "Illenium": "illenium",
     "Martin Garrix": "martingarrix",
@@ -376,41 +407,26 @@ ig = {
     "Gabby Barrett": "gabbybarrett_",  # safeguard
     "Kelsea Ballerini": "kelseaballerini",  # safeguard
     "Yeat": "yeat",
-    "Rylo Rodriguez": "rylorodriguez",
-    "That Mexican OT": "thatmexicanot",
     "Ken Carson": "kencarson",
     "Central Cee": "centralcee",
-    "FendiDa Rappa": "fendidarappa_",
     "Cris Mj": "cris_emejota",
     "BossMan Dlow": "bossman_dlow",
     "Rich Amiri": "richamiri",
     "Yahritza": "yahritza",                     # Yahritza y Su Esencia front
-    "Ivan Cornejo": "ivancornejoo",
-    "Calle 24": "calle24oficial",
     "Luis R Conriquez": "luisrconriquez",
     "Dareyes de La Sierra": "dareyesdelasierraoficial",
     "Oscar Maydon": "oscarmaydonn",
     "Tito Double P": "titodoublep",
     "Zach Top": "zach_top",
-    "Riley Green": "rileyduckman",
     "Conner Smith": "connersmithmusic",
     "Dylan Marlowe": "dylanmarlowemusic",
     "George Birge": "georgebirge",
-    "Warren Zeiders": "warrenzeiders",
-    "Oliver Anthony Music": "oliver_anthony_music",
-    "Dominic Fike": "dominicfike",
-    "Victoria Monet": "victoriamonet",
-    "Kenya Grace": "kenyagrace",
-    "Paul Russell": "paulrussellmusic",
     "Gracie Abrams": "gracieabrams",
     "Laufey": "laufey",
     "Chappell Roan": "chappellroan",
     "Artemas": "artemas",
     "Bakar": "bakarrrr",
-    "Mitski": "mitskileaks",
-    "Ryan Castro": "ryancastror",
     "Ravyn Lenae": "ravynlenae",
-    "Tyla": "tyla",
     "Mariah Carey": "mariahcarey",
     "Ozzy Osbourne": "ozzyosbourne",
     "Michael Buble": "michaelbuble",
@@ -420,20 +436,16 @@ ig = {
     "Billy Joel": "billyjoel",
     "Perry Como": "",  # no official IG, legacy artist
     "Jackson 5": "",   # no active IG, legacy Motown act
-    "The Beatles": "thebeatles",
     "Stromae": "stromae",
     "Childish Gambino": "childishgambino",  # sometimes inactive
-    "Timbaland": "timbaland",
     "Good Neighbours": "goodneighboursband",   # rising UK act
     "Surf Curse": "surfcurse",                 # indie rock duo
-    "The Citizens of Halloween": "",           # soundtrack project, no IG
     "PLUTO": "",                               # ambiguous (several artists use Pluto)
     "Maroon 5": "maroon5",
     "Coldplay": "coldplay",
     "Lorde": "lordemusic",
     "Eric Church": "ericchurchmusic",
     "Kenny Chesney": "kennychesney",
-    "Dustin Lynch": "dustinlynchmusic",
     "Thomas Rhett": "thomasrhettakins",  # safeguard, already exists
     "Chris Janson": "thechrisjanson",
     "Scotty McCreery": "scottymccreery",  # safeguard, already exists
@@ -448,7 +460,6 @@ ig = {
     "Kehlani": "kehlani",
     "Tinashe": "tinashenow",
     "Mariah the Scientist": "mariahthescientist",
-    "Victoria Monet": "victoriamonet", # safeguard
     "Jhene Aiko": "jheneaiko",         # if she shows lower in dataset
     "The Weeknd": "theweeknd",         # safeguard
     "Joyner Lucas": "joynerlucas",
@@ -463,7 +474,6 @@ ig = {
     "Paramore": "paramore",                # safeguard
     "The Killers": "thekillers",           # safeguard
     "The 1975": "the1975",                 # safeguard
-    "Fall Out Boy": "falloutboy",          # safeguard
     "Twenty One Pilots": "twentyonepilots",
     "Linkin Park": "linkinpark",           # safeguard
     "Pearl Jam": "pearljam",               # in case they appear
@@ -482,9 +492,6 @@ ig = {
     "Dasha": "dashanicsmusic",
     "Malcolm Todd": "malcolmtodd",
     "Max McNown": "maxmcnown",
-    "Oliver Anthony Music": "oliver_anthony_music",  # safeguard
-    "Myke Towers": "myketowers",
-    "Tainy": "tainy",
     "Manuel Turizo": "manuelturizo",   # safeguard
     "J Balvin": "jbalvin",             # safeguard
     "Karol G": "karolg",               # safeguard
@@ -502,14 +509,12 @@ ig = {
     "Sleepy Hallow": "thesleepyhallow",   # safeguard
     "Kay Flock": "officialkayflocka",     # safeguard
     "YNW Melly": "ynwmelly",              # if he appears further down
-    "Lil Tecca": "liltecca",
     "Lil Skies": "lilskies",              # in case in extended dataset
     "Mustard": "mustard",                 # safeguard
     "Trippie Redd": "trippieredd",        # safeguard
     "Yungeen Ace": "yungeenace",          # if listed in full CSV
     "Shoreline Mafia Presents OhGeesy": "ohgeesy",
     "Real Boston Richey": "realbostonrichey", # safeguard
-    "Ryan Gosling": "",         # not personally active, fan-run; no official IG (ryangoslinguk)
     "Addison Rae": "addisonraee",
     "Cynthia Erivo": "cynthiaerivo",
     "Jonathan Bailey": "jbayleaf",           # verified actor IG
@@ -534,14 +539,12 @@ ig = {
     "CHRYSTAL": "chrystaltheartist",
     "Pimmie": "pimmie",
     "4*TOWN (From Disney And Pixar's Turning Red)": "",  # fictional; no IG
-    "Charli xcx": "charli_xcx",
     "ROSE": "roses_are_rosie",             # BLACKPINK Rosé
     "JENNIE": "jennierubyjane",
     "LISA": "lalalalisa_m",
     "JEONGYEON": "twicetagram",            # TWICE member → group IG
     "Twenty One Pilots": "twentyonepilots",
     "The Marias": "themarias",
-    "310babii": "310babii",
     "4Batz": "4batz",
     "BossMan DLow": "bossman_dlow",        # alias for BossMan Dlow
     "Agust D": "agustd",                   # SUGA’s alt
@@ -559,16 +562,13 @@ ig = {
     "Grupo Marca Registrada": "grupomarcaregistrada",
     "Calle 24": "calle24oficial",
     "$uicideboy$": "suicideboys",         # duo account
-    "*NSYNC": "nsync",                   # legacy boyband
     "310babii": "310babii",
     "4Batz": "4batz",                    # rising R&B act
     "Agust D": "agustd",                 # BTS Suga solo
     "Alex Warren": "alexwarren",
-    "Andre 3000": "andre3000",           # rarely posts, sometimes inactive
     "AnnenMayKantereit": "annenmaykantereit",   # German band
     "BabyChiefDoit": "",                 # underground, no verified IG
     "Bhad Bhabie": "bhadbhabie",
-    "BigXthaPlug": "bigxthaplug",
     "Bryan Martin": "bryanmartinofficial",
     "Chase Matthew": "chasematthew",
     "Chayce Beckham": "chaycebeckhammusic",
@@ -588,8 +588,6 @@ ig = {
     "Hudson Westbrook": "",              # very small artist, no verified IG
     "John Morgan": "johnmorganmusic",
     "Ty Myers": "",                      # small country act, no IG yet
-    "Tyler Childers": "timmytychilders", # some confusion, but this is used
-    "Xavi": "xaviiioficial",
     "Jordan Adetunji": "jordanadetunji",
     "Josh Ross": "joshrossmusic",
     "Justin Timberlake": "justintimberlake",
@@ -613,6 +611,5 @@ ig = {
     "Shaboozey": "shaboozey",
     "Shoreline Mafia": "shorelinemafia",
     "Sleep Token": "sleep_token",
-    "Teddy Swims": "teddyswims",
     "The Red Clay Strays": "redclaystrays"
 }
