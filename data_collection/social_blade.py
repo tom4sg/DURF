@@ -49,7 +49,7 @@ df.to_csv("tiktok_vault_data.csv", index=False)
 # The Below can be used for YouTube Vault API Calls
 
 base_url = "https://matrix.sbapis.com/b"
-endpoint = "/youtube/statistics?query=SocialBlade&history=vault&allow-stale=false"
+endpoint = "/youtube/statistics?query=@SocialBlade&history=archive&allow-stale=false"
 
 
 headers = {
@@ -60,7 +60,10 @@ headers = {
 response = requests.get(base_url + endpoint, headers=headers)
 
 data = response.json()
+pprint(data)
 # %%
 
 df = pd.DataFrame(data["data"]["daily"])
-df.to_csv("tiktok_vault_data.csv", index=False)
+df.to_csv("youtube_vault_data.csv", index=False)
+
+# %%
