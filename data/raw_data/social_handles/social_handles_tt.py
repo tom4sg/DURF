@@ -101,7 +101,7 @@ tt = {
     "Lil Baby": "lilbaby",
     "BIA": "bia",
     "42 Dugg": "",
-    "Chloe": "chloebaileywashere",               # Chloe Bailey (of Chloe x Halle)
+    "Chloe": "chloebaileywashere",
     "Pusha T": "pusha_t",
     "BRELAND": "breland",
     "Morgan Wallen": "morganwallen",
@@ -403,156 +403,85 @@ tt = {
     "Jordan Adetunji": "jordanadetunji",
     "Coldplay": "coldplay",
     "Kelsea Ballerini": "kelseaballerini",
-    "LISA": "lalalalisa_m",              # BLACKPINK Lisa
-    "Childish Gambino": "",              # no official TikTok
+    "LISA": "lalalalisa_m",
+    "Childish Gambino": "donaldglover", 
     "Katy Perry": "katyperry",
-    "BossMan DLow": "bossmandlow",       # safeguard
     "Real Boston Richey": "realbostonrichey",
     "Sevdaliza": "sevdaliza",
-    "Hanumankind": "hanumankind",
+    "Hanumankind": "hanumankind.otw",
     "Royel Otis": "royelotis",
     "A$AP Rocky": "asaprocky",
-    "Richy Mitch": "",                   # no TikTok
+    "Richy Mitch And The Coal Miners": "rmcmband",
     "Drew Baldridge": "drewbaldridgemusic",
-    "Gigi Perez": "gigiperezmusic",
-    "Chase Matthew": "chasematthew",
+    "Gigi Perez": "gigi4perez",
+    "Chase Matthew": "iamchasematthew",
     "Tito Double P": "titodoublep",
     "Addison Rae": "addisonre",
-    "Surf Curse": "surfcurse",
+    "Surf Curse": "surfcurseofficial",
     "Playboi Carti": "playboicarti",
     "Zach Top": "zachtop",
     "Alex Warren": "alexwarren",
     "The Marias": "themarias",
     "Odetari": "odetari",
     "KSI": "ksi",
-    "Jennie": "jennierubyjane",          # BLACKPINK Jennie
-    "ROSE": "roses_are_rosie",           # BLACKPINK Rosé
-    "Oscar Maydon": "oscarmaydon",
+    "JENNIE": "jennierubyjane",
+    "ROSE": "roses_are_rosie",
+    "Oscar Maydon": "oscar_maydonnn",
     "Brandon Lake": "brandonlakemusic",
     "Loe Shimmy": "loeshimmy",
     "Brooks & Dunn": "brooksanddunn",
     "Cynthia Erivo": "cynthiaerivo",
-    "Jonathan Bailey": "",                 # actor, no TikTok music presence
+    "Jonathan Bailey": "",
     "Stromae": "stromae",
     "Laufey": "laufey",
-    "Lola Young": "lolayoung",
-    "Sam Barber": "sam.barber.music",
+    "Lola Young": "lolayounggg",
+    "Sam Barber": "sambarber_music",
     "Michael Buble": "michaelbuble",
-    "Darlene Love": "",                    # legacy artist, no TikTok
+    "Darlene Love": "",
     "Gwen Stefani": "gwenstefani",
     "Kesha": "kesha",
-    "Neton Vega": "netonvegaoficial",
+    "Neton Vega": "net0n__",
     "Dylan Marlowe": "dylanmarlowemusic",
-    "Ty Myers": "",                        # small country act, no TikTok
-    "Gelo": "",                            # ambiguous (no verified handle)
-    "CHRYSTAL": "",                        # indie/unknown, no TikTok
+    "Ty Myers": "tymyers",
+    "Gelo": "gelo",
+    "CHRYSTAL": "chrystal.archives",
     "Imogen Heap": "imogenheap",
     "Leon Thomas": "leonthomas",
-    "JENNIE": "jennierubyjane",            # duplicate safeguard (BLACKPINK Jennie)
     "Giveon": "giveon",
     "PARTYNEXTDOOR": "partynextdoor",
-    "Pimmie": "",                          # Thai artist, not on TikTok
+    "Pimmie": "ayopimmie",
     "Bhad Bhabie": "bhadbhabie",
-    "Aleman": "aleman",
-    "Sleep Token": "sleeptoken",
-    "John Morgan": "johnmorganmusic",
-    "Ravyn Lenae": "ravynlenae",
-    "sombr": "",                           # underground, no TikTok
-    "LOCASH": "locashmusic",
-    "Malcolm Todd": "malcolmtodd",
-    "Eric Church": "ericchurch",
-    "Forrest Frank": "forrestfrank",
-    "PLUTO": "",                           # ambiguous, no official
-    "Hudson Westbrook": "",                # very small, no TikTok
-    "Lorde": "lordemusic",
-    "Chuckyy": "",                         # underground, no TikTok
-    "Mariah The Scientist": "mariahthescientist",
-    "Maroon 5": "maroon5",
-    "KATSEYE": "katseyeofficial",
-    "MOLIY": "moliyofficial",
-    "Max McNown": "maxmcnown",
-    "Mariah Carey": "mariahcarey",
-    "ATEEZ": "ateez_official_",
-    "Josh Ross": "joshrossmusic",
-    "Saja Boys": "",                       # no TikTok
-    "HUNTR/X": "",                          # no TikTok                         # no TikTok
-    "Rumi": "",                            # ambiguous, no TikTok
-    "BabyChiefDoit": "",                   # underground, no TikTok
-    "G Herbo": "gherbo",
-    "JEONGYEON": "twice_tiktok",          # member of TWICE → group account
-    "Disco Lines": "discolines",
-    "Clipse": "",                         # legacy hip-hop duo, no TikTok
-    "Ozzy Osbourne": "ozzyosbourne",
-    "Dareyes de La Sierra": "dareyesdelasierraoficial",
-    "Mariah the Scientist": "mariahthescientist",
-    "Pierce the Veil": "piercetheveil",
-    "Brooks & Dunn": "brooksanddunn",     # safeguard repeat
-    "Cynthia Erivo": "cynthiaerivo",      # safeguard repeat
-    "Jonathan Bailey": "",                # actor, not music on TikTok
-    "Stromae": "stromae",                 # safeguard repeat
-    "Laufey": "laufey",                   # safeguard repeat
-    "Lola Young": "lolayoung",            # safeguard repeat
-    "Sam Barber": "sam.barber.music",     # safeguard repeat
-    "Michael Buble": "michaelbuble",      # safeguard repeat
-    "Darlene Love": "",                   # legacy, no TikTok
-    "Gwen Stefani": "gwenstefani",        # safeguard repeat
-    "Kesha": "kesha",                     # safeguard repeat
-    "Neton Vega": "netonvegaoficial",      # safeguard repeat
-    "Dylan Marlowe": "dylanmarlowe",
-    "Ty Myers": "",                       # small act, no verified TikTok yet
-    "Gelo": "",                           # ambiguous, no verified artist TikTok
-    "CHRYSTAL": "",                       # indie, not on TikTok
-    "Imogen Heap": "imogenheapmusic",
-    "Leon Thomas": "leonthomas",          
-    "JENNIE": "jennierubyjane",           # BLACKPINK Jennie solo
-    "Giveon": "giveon",
-    "PARTYNEXTDOOR": "partynextdoor",
-    "Pimmie": "",                         # Thai singer, no verified TikTok
-    "Bhad Bhabie": "bhadbhabie",
-    "Aleman": "aleman_oficial",
+    "Aleman": "mxalemanmx",
     "Sleep Token": "sleep_token",
     "John Morgan": "johnmorganmusic",
     "Ravyn Lenae": "ravynlenae",
-    "sombr": "",                          # underground, no TikTok
-    "LOCASH": "locash",
-    "Malcolm Todd": "malcolmtodd",
-    "Eric Church": "ericchurchmusic",
-    "Forrest Frank": "forrestfrank",
-    "PLUTO": "",                           # multiple artists, no single handle
-    "Hudson Westbrook": "",               # small/indie, no verified TikTok
-    "Lorde": "lordemusic",
-    "Chuckyy": "",                        # underground, no verified TikTok
-    "Mariah The Scientist": "mariahthescientist",
+    "sombr": "sombr",
+    "LOCASH": "locashmusic",
+    "Malcolm Todd": "malcolmtodddd",
+    "Eric Church": "ericchurch",
+    "Forrest Frank": "hiforrestt",
+    "PLUTO": "plutonotdaabraat",
+    "Hudson Westbrook": "hudsonwestbrookmusic",
+    "Lorde": "lorde",
+    "Chuckyy": "chuckywackem",
+    "Mariah the Scientist": "mariahthescientist",
     "Maroon 5": "maroon5",
-    "KATSEYE": "katseyeofficial",         # new K-pop group, TikTok active
-    "wifiskeleton": "",                   # underground, not on TikTok
-    "MOLIY": "moliy",                     # Ghanaian singer
+    "KATSEYE": "katseyeworld",
+    "wifiskeleton": "_wifiskeleton",
+    "MOLIY": "moliymusic",
     "Max McNown": "maxmcnown",
     "Mariah Carey": "mariahcarey",
     "ATEEZ": "ateez_official_",
     "Josh Ross": "joshrossmusic",
-    "Saja Boys": "",                      # indie, no TikTok                      # not on TikTok
-    "Rumi": "",                           # ambiguous, no official TikTok
-    "BabyChiefDoit": "",                  # underground, no TikTok
+    "Saja Boys": "",
+    "HUNTR/X": "",
+    "Rumi": "",
+    "BabyChiefDoit": "babychiefdoit",
     "G Herbo": "gherbo",
-    "JEONGYEON": "twice_tiktok_official", # part of TWICE → group channel
+    "JEONGYEON": "",
     "Disco Lines": "discolines",
-    "Clipse": "",                          # legacy duo, no official TikTok
-    "Ozzy Osbourne": "ozzyosbourne",
-    "Dareyes de La Sierra": "",          # no verified TikTok
-    "Mariah the Scientist": "mariahthescientist",  # duplicate safeguard
+    "Clipse": "clipse",
+    "Ozzy Osbourne": "",
+    "Dareyes de La Sierra": "dareydls",
     "Pierce the Veil": "piercetheveil",
-    "Brooks & Dunn": "brooksanddunn",
-    "Cynthia Erivo": "cynthiaerivo",
-    "Jonathan Bailey": "",               # actor, no music TikTok
-    "Stromae": "stromae",
-    "Laufey": "laufey",
-    "Lola Young": "lolayoungmusic",
-    "Sam Barber": "sam_barber_music",
-    "Michael Buble": "michaelbuble",
-    "Darlene Love": "",                  # legacy artist, no TikTok
-    "Gwen Stefani": "gwenstefani",
-    "Kesha": "iiswhoiis",
-    "Neton Vega": "",                    # corridos artist, no verified TikTok
-    "Dylan Marlowe": "dylanmarlowemusic",
 }
