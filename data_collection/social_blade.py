@@ -9,7 +9,7 @@ from pprint import pprint
 # The Below can be used for Instagram Vault API Calls
 
 base_url = "https://matrix.sbapis.com/b"
-endpoint = "/instagram/statistics?query=SocialBlade&history=vault&allow-stale=false"
+endpoint = "/instagram/statistics?query=nba_youngboy&history=vault&allow-stale=false"
 
 
 headers = {

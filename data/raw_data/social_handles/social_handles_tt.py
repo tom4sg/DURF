@@ -2,7 +2,7 @@ tt = {
     "Lil Durk": "lildurk",
     "Vince Guaraldi Trio": "vinceguaraldi",
     "Roddy Ricch": "roddyricch",
-    "Kelly Clarkson": "kellyclarksonshow",         
+    "Kelly Clarkson": "kellyclarkson",         
     "Acraze": "acrazemusic",
     "Carolina Gaitan": "lagaitagaitan",
     "Jessica Darrow": "jessdarrow_",   
