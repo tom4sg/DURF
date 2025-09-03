@@ -77,3 +77,11 @@ ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc="best")
 plt.title("Folded by Kehlani - Billboard Rank vs TikTok UGCs")
 plt.show()
 # %%
+
+emerging_hot_100_unique = emerging_hot_100.drop_duplicates(subset="song_id")
+emerging_hot_100_unique
+
+# %%
+
+emerging_hot_100[emerging_hot_100["song_id"] == "Folded — Kehlani"]
+# %%

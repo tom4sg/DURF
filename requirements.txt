@@ -8,3 +8,4 @@ s3fs
 pyarrow
 boto3
 apple-music-python
+rapidfuzz

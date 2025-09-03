@@ -5,7 +5,6 @@ import applemusicpy
 import pandas as pd
 from tqdm import tqdm
 
-
 # %%
 
 p8_path = os.getenv("P8_PATH")
@@ -26,16 +25,21 @@ for item in results['results']['songs']['data']:
     print(item['attributes']['name'])
 
 # %%
+from rapidfuzz import fuzz
 
-def get_song_id(song_name, artist_name, limit=5, storefront="us"):
+def get_song_id(song_name, artist_name, durf_id, limit=25, storefront="us"):
     try:
-        term = f"{song_name} {artist_name}"
+        # durf_id = durf_id.split(" — ")[1]
+        term = f"{artist_name} {song_name}"
         results = am.search(term, types=["songs"], limit=limit, storefront=storefront)
 
         for song in results.get("results", {}).get("songs", {}).get("data", []):
             title = song["attributes"]["name"].lower()
             artist = song["attributes"]["artistName"].lower()
-            if song_name.lower() in title and artist_name.lower() in artist:
+            if ((fuzz.ratio(song_name.lower(), title) >= 65 or
+                 song_name.lower() in title.lower()) and 
+                 (fuzz.ratio(artist_name.lower(), artist) >= 65 or
+                 artist_name.lower() in artist.lower())):
                 return song["id"]
         return None
     except Exception as e:
@@ -75,8 +79,12 @@ FIELDS = [
     "isrc","name","playParams","previews","releaseDate","trackNumber","url"
 ]
 
+#%%
+import numpy as np
+
+
 # 1) Load previous output and ensure columns exist
-df = pd.read_csv("data/processed_data/unique_emerging_songs_apple_music.csv")
+df = pd.read_csv("data/processed_data/metadata.csv")
 
 for col in (["apple_song_id"] + FIELDS):
     if col not in df.columns:
@@ -100,11 +108,12 @@ out_partial = "data/processed_data/unique_emerging_songs_apple_music_retry_parti
 for k, (idx, row) in enumerate(tqdm(null_rows.iterrows(), total=len(null_rows)), start=1):
     title = row["title"]
     artist = row["main_artist"]
+    durf_id = row["song_id"]
 
     # 3a) Resolve/refresh song_id if missing
     song_id = row.get("apple_song_id")
     if pd.isna(song_id) or not song_id:
-        song_id = get_song_id(title, artist)
+        song_id = get_song_id(title, artist, durf_id)
 
     # 3b) Fetch metadata (fill all fields with None if still missing)
     meta = get_song_metadata(song_id) if song_id else {f: None for f in FIELDS}
@@ -126,8 +135,41 @@ df_retry = pd.DataFrame(records_retry).set_index("_idx")
 cols_to_update = ["apple_song_id"] + FIELDS
 df.loc[df_retry.index, cols_to_update] = df_retry[cols_to_update]
 
+#%%
+
 # 5) Save final
-df.to_csv("data/processed_data/unique_emerging_songs_apple_music_updated.csv", index=False)
+df.to_csv("data/processed_data/metadata.csv", index=False)
 print("Updated rows:", len(df_retry))
 
+# %%
+am.search("How Do I Make You Love Me The Weeknd", types=["songs"], limit=10)
+# %%
+results = am.search("Lil Durk Smoking & Thinking", types=["songs"], limit=25)
+for item in results['results']['songs']['data']:
+    if (fuzz.ratio(item['attributes']['name'].lower(), "Smoking & Thinking".lower()) >= 70 
+        and fuzz.ratio(item['attributes']['artistName'].lower(), "Lil Durk".lower()) >= 70):
+        print(item['attributes']['name'])
+        print(item['attributes']['artistName'])
+    else:
+        print("Not found, here we had: ", item['attributes']['name'], item['attributes']['artistName'])
+#%%
+from rapidfuzz import fuzz
+
+similarity = fuzz.ratio("Gunna", "Gunna & Future")
+print(similarity)
+
+
+
+"""
+Songs that can be answered with .search()
+
+Pushin P
+wgft
+gp
+M.T.B.T.T.F.
+"""
+# %%
+'Gunna'.lower() in 'Gunna & Future'.lower()
+# %%
+"Broadway Girls — Lil Durk Featuring Morgan Wallen".split(" — ")[1]
 # %%
