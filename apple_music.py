@@ -24,13 +24,37 @@ results = am.search('travis scott', types=['songs'], limit=10)
 for item in results['results']['songs']['data']:
     print(item['attributes']['name'])
 
+#%%
+
+mappings = [
+    "JIN", "Jin",
+    "4*TOWN (From Disney", "4*TOWN (From Disney And Pixar's Turning Red)",
+    "mgk", "Machine Gun Kelly",
+    "¥$: Kanye West", "Kanye West",
+    "$uicideBoy$", "$uicideboy$",
+    "Charli XCX", "Charli xcx",
+    "Yahritza y Su Esencia", "Yahritza Y Su Esencia",
+    "Tyler, the Creator", "Tyler, The Creator",
+    "twenty one pilots", "Twenty One Pilots",
+    "jessie murph", "Jessie Murph",
+    "BLEU", "Yung Bleu",
+    "HUNTRX", "HUNTR/X",
+    "HUNTR", "HUNTR/X",
+    "Twice", "TWICE",
+    "Pharrell", "Pharrell Williams",
+    "BossMan DLow", "BossMan Dlow",
+    "Richy Mitch", "Richy Mitch And The Coal Miners",
+    "Jennie", "JENNIE",
+    "Mariah The Scientist", "Mariah the Scientist"
+]
+
 # %%
 from rapidfuzz import fuzz
 
 def get_song_id(song_name, artist_name, durf_id, limit=25, storefront="us"):
     try:
-        # durf_id = durf_id.split(" — ")[1]
-        term = f"{artist_name} {song_name}"
+        durf_id = durf_id.split(" — ")[1]
+        term = f"{durf_id}"
         results = am.search(term, types=["songs"], limit=limit, storefront=storefront)
 
         for song in results.get("results", {}).get("songs", {}).get("data", []):
@@ -39,7 +63,8 @@ def get_song_id(song_name, artist_name, durf_id, limit=25, storefront="us"):
             if ((fuzz.ratio(song_name.lower(), title) >= 65 or
                  song_name.lower() in title.lower()) and 
                  (fuzz.ratio(artist_name.lower(), artist) >= 65 or
-                 artist_name.lower() in artist.lower())):
+                 artist_name.lower() in artist.lower())
+                 or artist_name in mappings):
                 return song["id"]
         return None
     except Exception as e:
@@ -138,20 +163,28 @@ df.loc[df_retry.index, cols_to_update] = df_retry[cols_to_update]
 #%%
 
 # 5) Save final
-df.to_csv("data/processed_data/metadata.csv", index=False)
+df.to_csv("data/processed_data/metadata_updated.csv", index=False)
 print("Updated rows:", len(df_retry))
 
 # %%
-am.search("How Do I Make You Love Me The Weeknd", types=["songs"], limit=10)
+am.search("Bad BDos Mil 16", types=["songs"], limit=10)
 # %%
-results = am.search("Lil Durk Smoking & Thinking", types=["songs"], limit=25)
+results = am.search("Love Me 4 Me SOS Deluxe - SZA", types=["songs"], limit=25)
 for item in results['results']['songs']['data']:
-    if (fuzz.ratio(item['attributes']['name'].lower(), "Smoking & Thinking".lower()) >= 70 
-        and fuzz.ratio(item['attributes']['artistName'].lower(), "Lil Durk".lower()) >= 70):
+    if (fuzz.ratio(item['attributes']['name'].lower(), "Love Me 4 Me".lower()) >= 70 
+        and fuzz.ratio(item['attributes']['artistName'].lower(), "SZA".lower()) >= 70):
         print(item['attributes']['name'])
         print(item['attributes']['artistName'])
     else:
         print("Not found, here we had: ", item['attributes']['name'], item['attributes']['artistName'])
+#%%
+results = am.search("emo girl machine gun kelly", types=["songs"], limit=25)
+for item in results['results']['songs']['data']:
+    print("Song: ", item)
+    
+#%%
+
+
 #%%
 from rapidfuzz import fuzz
 
