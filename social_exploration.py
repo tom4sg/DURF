@@ -45,8 +45,8 @@ ugc = ugc_data.copy()
 ugc["Date"] = pd.to_datetime(ugc["Date"], format="%d/%b/%y")
 ugc = ugc[["Date", "Total Creates"]]
 ugc_weekly = (
-    ugc.groupby(pd.Grouper(key="Date", freq="W-SAT"))  # Billboard charts are Saturday weeks
-    ["Total Creates"].max()  # cumulative creates → use max per week
+    ugc.groupby(pd.Grouper(key="Date", freq="W-SAT"))
+    ["Total Creates"].max()
     .reset_index()
 )
 
@@ -146,6 +146,7 @@ weeks_on_chart_df
 
 import seaborn as sns
 
+plt.figure(figsize=(12,6))
 sns.histplot(weeks_on_chart_df["wks_on_chart"], bins=30, kde=True, color="blue", edgecolor="black")
 plt.title("How Long Songs Stay on the Billboard Hot 100 (2022–2025)")
 plt.xlabel("Weeks on Chart")
@@ -177,8 +178,8 @@ spots in the 70s 80s etc.
 """
 #%%
 
-!pip uninstall -y pydantic instagrapi
-!pip install --no-cache-dir "pydantic<2" "instagrapi<2"
+# !pip uninstall -y pydantic instagrapi
+# !pip install --no-cache-dir "pydantic<2" "instagrapi<2"
 
 
 #%%
@@ -199,6 +200,6 @@ for media in posts:
     # download photos to the current folder
     cl.photo_download(media.pk)
 
-#See [examples/session_login.py](examples/session_login.py) for a standalone script demonstrating these login methods.
+# See [examples/session_login.py](examples/session_login.py) for a standalone script demonstrating these login methods.
 
 # %%
