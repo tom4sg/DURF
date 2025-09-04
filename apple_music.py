@@ -183,9 +183,6 @@ for item in results['results']['songs']['data']:
     print("Song: ", item)
     
 #%%
-
-
-#%%
 from rapidfuzz import fuzz
 
 similarity = fuzz.ratio("Gunna", "Gunna & Future")

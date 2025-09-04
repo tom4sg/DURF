@@ -76,6 +76,7 @@ ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc="best")
 
 plt.title("Folded by Kehlani - Billboard Rank vs TikTok UGCs")
 plt.show()
+
 # %%
 
 emerging_hot_100_unique = emerging_hot_100.drop_duplicates(subset="song_id")
@@ -84,4 +85,120 @@ emerging_hot_100_unique
 # %%
 
 emerging_hot_100[emerging_hot_100["song_id"] == "Folded — Kehlani"]
+
+# %%
+
+import ast
+import pandas as pd
+
+metadata = pd.read_csv("data/processed_data/metadata.csv").reset_index(drop=True)
+metadata["genreNames"] = metadata["genreNames"].apply(lambda x: ast.literal_eval(x) if pd.notnull(x) else [])
+
+#%%
+
+type(metadata["genreNames"].iloc[1])
+metadata
+
+# %%
+
+import matplotlib.pyplot as plt
+
+# Step 1: explode genres into separate rows
+genres_exploded = metadata.explode("genreNames")
+genres_exploded = genres_exploded[genres_exploded["genreNames"] != "Music"]
+
+#%%
+
+# Step 2: count occurrences
+genre_counts = genres_exploded["genreNames"].value_counts()
+
+# Step 3: plot
+top_genres = genre_counts.head(30)  # top 15 genres
+plt.figure(figsize=(12,6))
+top_genres.plot(kind="bar")
+plt.title("Distribution of Genre Tags (2022-2025)")
+plt.xticks(rotation=45, ha="right")
+plt.xlabel("Genre", fontsize=12)
+plt.ylabel("Number of Songs", fontsize=12)
+plt.show()
+
+#%%
+
+import numpy as np
+
+print(f"Max weeks on chart: {np.max(emerging_hot_100['wks_on_chart'])}")
+print(f"Mean weeks on chart: {np.ceil(np.mean(emerging_hot_100['wks_on_chart']))}")
+print(f"Median weeks on chart: {round(np.median(emerging_hot_100['wks_on_chart']), 1)}")
+print(f"Standard deviation of weeks on chart: {round(np.std(emerging_hot_100['wks_on_chart']), 1)}")
+
+# Let's do a quick check for the most popular song
+longest = emerging_hot_100.sort_values("wks_on_chart", ascending=False).head(40)
+longest
+
+# %%
+
+weeks_on_chart_df = pd.read_csv("data/processed_data/emerging_hot_100.csv")
+weeks_on_chart_df.sort_values(by="wks_on_chart", ascending=False)
+weeks_on_chart_df = weeks_on_chart_df.groupby("song_id")["wks_on_chart"].max().reset_index()
+weeks_on_chart_df
+
+#%%
+
+import seaborn as sns
+
+sns.histplot(weeks_on_chart_df["wks_on_chart"], bins=30, kde=True, color="blue", edgecolor="black")
+plt.title("How Long Songs Stay on the Billboard Hot 100 (2022–2025)")
+plt.xlabel("Weeks on Chart")
+plt.ylabel("Frequency")
+plt.show()
+# %%
+# Notice: There is an interesting peak around 20 weeks! Why?
+# Let's join metadata with weeks_on_chart_df and see if the release date is related
+
+merged = pd.merge(weeks_on_chart_df, metadata, on="song_id", how="inner").drop(columns=["Unnamed: 0"])
+merged
+
+# %%
+
+"""
+Look at these rules!
+
+RECURRENT RULES:
+Descending songs are removed from the Billboard Hot 100 and Radio Songs simultaneously after 20 weeks on 
+the Billboard Hot 100 and if ranking below No. 50, or after 52 weeks if below No. 25. 
+
+"""
+# %%
+
+"""
+SO if this weren't the case, the gap between week 1 and week 20 would be filled
+with a smooth exponential type decay. Records falling from 50 would fall to fill these
+spots in the 70s 80s etc.
+"""
+#%%
+
+!pip uninstall -y pydantic instagrapi
+!pip install --no-cache-dir "pydantic<2" "instagrapi<2"
+
+
+#%%
+
+import os
+from instagrapi import Client
+
+#%%
+
+cl = Client()
+cl.login(os.getenv("INSTAGRAM_USERNAME"), os.getenv("INSTAGRAM_PASSWORD"))
+
+#%%
+
+target_id = cl.user_id_from_username("taylorswift")
+posts = cl.user_medias(target_id, amount=10)
+for media in posts:
+    # download photos to the current folder
+    cl.photo_download(media.pk)
+
+#See [examples/session_login.py](examples/session_login.py) for a standalone script demonstrating these login methods.
+
 # %%
