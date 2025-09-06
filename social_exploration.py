@@ -115,6 +115,9 @@ metadata = metadata.merge(
 metadata
 
 #%%
+metadata.to_csv("data/processed_data/metadata_with_collabs.csv")
+
+#%%
 
 metadata = metadata[metadata["performers"] == metadata["main_artist"]]
 metadata
