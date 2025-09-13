@@ -37,16 +37,79 @@ solo_songs.groupby("main_artist")["song_id"].nunique()
 
 #%%
 
-picked = (solo_songs
-          .groupby("main_artist", group_keys=False)
-          .apply(lambda g: g.sample(1, random_state=42))
-          .reset_index(drop=True))
+sampled_solo_songs = (solo_songs
+           .groupby("main_artist", group_keys=False)
+           .apply(lambda g: g.sample(1, random_state=42))
+           .reset_index(drop=True))
 
-picked
+song_peaks = (emerging_songs
+           .groupby("song_id", as_index=False)["current_week"]
+           .min()
+           .rename(columns={"current_week": "peak_pos"}))
+
+lifespans = (emerging_songs
+           .groupby("song_id", as_index=False)["wks_on_chart"]
+           .max()
+           .rename(columns={"wks_on_chart": "lifespan"}))
 
 #%%
 
-feature_df = pd.DataFrame()
+"""
+Here are features we can add from the emerging_songs dataframe:
+- song_id
+- title
+- artist
+- release_date
+- entry_week_date
+- entry_week_pos
+- peak_pos
+- lifespan
+
+Let's add the first 3...
+"""
+
+#%%
+
+feature_df = pd.DataFrame({
+    "song_id": sampled_solo_songs["song_id"],
+    "title": sampled_solo_songs["title"],
+    "artist": sampled_solo_songs["main_artist"],
+    "entry_week_date": sampled_solo_songs["chart_week"],
+    "entry_week_pos": sampled_solo_songs["current_week"],
+})
+
+feature_df
+
+#%%
+
+"""
+For release date, we can get this from metadata.csv based on song_id.
+"""
+
+#%%
+
+metadata = pd.read_csv("data/processed_data/metadata.csv")
+metadata.drop(columns=["Unnamed: 0"], inplace=True)
+metadata
+
+#%%
+
+feature_df = feature_df.merge(
+    metadata[["song_id", "releaseDate"]]
+      .rename(columns={"releaseDate": "release_date"}),
+    on="song_id",
+    how="left"
+)
+feature_df = feature_df.merge(song_peaks, on="song_id", how="left")
+feature_df = feature_df.merge(lifespans, on="song_id", how="left")
+
+# Let's reorder the columns to what I described in the comment
+
+cols = ["song_id", "title", "artist", 
+        "release_date", "entry_week_date", 
+        "entry_week_pos", "peak_pos", "lifespan"] 
+feature_df = feature_df[cols]
+feature_df
 
 #%%
 
