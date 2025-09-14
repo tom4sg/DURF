@@ -305,6 +305,17 @@ as these are genres known for collaborations.
 
 #%%
 
+top_genres = genre_counts.head(30)
+plt.figure(figsize=(12,6))
+top_genres.plot(kind="bar")
+plt.title("Distribution of Genre Tags (2022-2025)")
+plt.xticks(rotation=45, ha="right")
+plt.xlabel("Genre", fontsize=12)
+plt.ylabel("Number of Songs", fontsize=12)
+plt.show()
+
+#%%
+
 # Let's see duration of songs
 
 #%%

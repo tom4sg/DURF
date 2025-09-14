@@ -10,9 +10,9 @@ import matplotlib.dates as mdates
 instagram = pd.read_csv("data/raw_data/social_archives/instagram_archive.csv")
 tiktok = pd.read_csv("data/raw_data/social_archives/tiktok_archive.csv")
 youtube = pd.read_csv("data/raw_data/social_archives/youtube_archive.csv")
-emerging_hot_100 = pd.read_csv("data/processed_data/emerging_hot_100.csv")
+emerging_songs = pd.read_csv("data/processed_data/emerging_songs.csv")
 ugc_data = pd.read_csv("data/raw_data/melodyiq_ugc_sample/folded_kehlani_ugc_and_views_tiktok.csv")
-emerging_hot_100
+emerging_songs
 
 #%%
 
@@ -30,7 +30,7 @@ artist_instagram
 
 #%%
 
-artist_hot_100 = emerging_hot_100[emerging_hot_100["song_id"] == "Folded — Kehlani"]
+artist_hot_100 = emerging_songs[emerging_songs["song_id"] == "Folded — Kehlani"]
 artist_hot_100
 
 #%%
@@ -79,17 +79,20 @@ plt.show()
 
 # %%
 
-emerging_hot_100_unique = emerging_hot_100.drop_duplicates(subset="song_id")
-emerging_hot_100_unique
+emerging_songs_unique = emerging_songs.drop_duplicates(subset="song_id")
+emerging_songs_unique
 
 # %%
 
-emerging_hot_100[emerging_hot_100["song_id"] == "Folded — Kehlani"]
+emerging_songs[emerging_songs["song_id"] == "Folded — Kehlani"]
 
 # %%
 
 import ast
 import pandas as pd
+
+#%%
+
 metadata = pd.read_csv("data/processed_data/metadata.csv").reset_index(drop=True)
 metadata["genreNames"] = metadata["genreNames"].apply(lambda x: ast.literal_eval(x) if pd.notnull(x) else [])
 metadata
@@ -140,10 +143,11 @@ genre_counts = genres_exploded["genreNames"].value_counts()
 top_genres = genre_counts.head(30)  # top 15 genres
 plt.figure(figsize=(12,6))
 top_genres.plot(kind="bar")
-plt.title("Distribution of Genre Tags for Solo Artist Songs (2022-2025)")
+plt.title("Distribution of Genre Tags(2022-2025)")
 plt.xticks(rotation=45, ha="right")
 plt.xlabel("Genre", fontsize=12)
 plt.ylabel("Number of Songs", fontsize=12)
+plt.legend(loc="best")
 plt.show()
 
 #%%
