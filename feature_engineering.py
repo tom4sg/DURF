@@ -27,12 +27,25 @@ Potential:
 Feature Scaling:
 It might be advantageous to log transform for CWGR.
 Maybe Min Max normalize or z-score. 
+
+Here are features we can add from the emerging_songs dataframe:
+- song_id
+- title
+- artist
+- release_date
+- entry_week_date
+- entry_week_pos
+- peak_pos
+- lifespan
 """
 #%%
 
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
+import ast
+from utils import expand_to_full_window, plot_two_metrics
 
 #%%
 
@@ -40,8 +53,6 @@ emerging_songs = pd.read_csv("data/processed_data/emerging_songs.csv")
 solo_songs = emerging_songs[emerging_songs["main_artist"] == emerging_songs["performers"]].copy()
 solo_songs = solo_songs.drop_duplicates(subset="song_id")
 solo_songs.groupby("main_artist")["song_id"].nunique()
-
-#%%
 
 sampled_solo_songs = (solo_songs
            .groupby("main_artist", group_keys=False)
@@ -58,24 +69,6 @@ lifespans = (emerging_songs
            .max()
            .rename(columns={"wks_on_chart": "lifespan"}))
 
-#%%
-
-"""
-Here are features we can add from the emerging_songs dataframe:
-- song_id
-- title
-- artist
-- release_date
-- entry_week_date
-- entry_week_pos
-- peak_pos
-- lifespan
-
-Let's add the first 3...
-"""
-
-#%%
-
 feature_df = pd.DataFrame({
     "song_id": sampled_solo_songs["song_id"],
     "title": sampled_solo_songs["title"],
@@ -84,26 +77,9 @@ feature_df = pd.DataFrame({
     "entry_week_pos": sampled_solo_songs["current_week"],
 })
 
-feature_df
-
-#%%
-
-"""
-For release date, we can get this from metadata.csv based on song_id.
-"""
-
-#%%
-
-import ast
-
-#%%
-
 metadata = pd.read_csv("data/processed_data/metadata.csv")
 metadata["genreNames"] = metadata["genreNames"].apply(lambda x: ast.literal_eval(x) if pd.notnull(x) else [])
 metadata.drop(columns=["Unnamed: 0"], inplace=True)
-metadata
-
-#%%
 
 feature_df = feature_df.merge(
     metadata[["song_id", "releaseDate", "genreNames", "durationInMillis"]]
@@ -178,8 +154,6 @@ youtube = youtube.merge(
     how="left"
 )
 
-#%%
-
 youtube["date"] = pd.to_datetime(youtube["date"])
 youtube["release_date"] = pd.to_datetime(youtube["release_date"])
 
@@ -189,57 +163,35 @@ mask = (
 )
 
 yt_pre4_df = youtube.loc[mask, ["artist","platform","date","release_date","subs","views"]].copy()
-
 yt_pre4_df = yt_pre4_df.sort_values(["artist","date"]).reset_index(drop=True)
-yt_pre4_df[yt_pre4_df["artist"] == "Sleep Token"]
+
+yt_pre4_clean = expand_to_full_window(yt_pre4_df, ("artist","platform"), "date", "release_date", 28)
 
 #%%
 """
 Let's plot ALL Artist youtube data prior to release.
 """
-
-for (artist, platform), g in yt_pre4_df.groupby(["artist", "platform"]):
-    g = g.sort_values("date")
-
-    fig, ax1 = plt.subplots(figsize=(8,4))
-    line_subs, = ax1.plot(g["date"], g["subs"], marker="o", label="Subscribers")
-    ax1.set_xlabel("Date"); ax1.set_ylabel("Subscribers")
-
-    ax2 = ax1.twinx()
-    line_views, = ax2.plot(g["date"], g["views"], marker=".", linestyle="--", label="Views")
-    ax2.set_ylabel("Views")
-
-    rd = g["release_date"].iloc[0]
-    ax1.axvline(rd, linestyle=":", linewidth=1)
-
-    fig.autofmt_xdate()
-    handles = [line_subs, line_views]
-    labels  = [h.get_label() for h in handles]
-
-    ax1.legend(handles, labels, loc="upper left")
-
-    plt.tight_layout()
-    plt.savefig(f"graphs/yt_original/youtube_pre4_{artist}_{platform}.png", dpi=150)
-    plt.close(fig)
+plot_two_metrics(yt_pre4_clean, metric1="subs", metric2="views",
+                 outdir="graphs/yt_original",
+                 filename_pattern="yt_{artist}_{platform}.png")
 
 #%%
 
 grp = ["artist", "platform"]
 
 # 1) Mark zeros that are almost surely "missing" (group has some positive values)
-views_has_pos = yt_pre4_df.groupby(grp)["views"].transform("max") > 0
-subs_has_pos  = yt_pre4_df.groupby(grp)["subs"].transform("max")  > 0
+views_has_pos = yt_pre4_clean.groupby(grp)["views"].transform("max") > 0
+subs_has_pos  = yt_pre4_clean.groupby(grp)["subs"].transform("max")  > 0
 
-zero_views_missing = (yt_pre4_df["views"] == 0) & views_has_pos
-zero_subs_missing  = (yt_pre4_df["subs"]  == 0) & subs_has_pos
+zero_views_missing = (yt_pre4_clean["views"] == 0) & views_has_pos
+zero_subs_missing  = (yt_pre4_clean["subs"]  == 0) & subs_has_pos
 
-yt_pre4_df["views_zero_proxy_missing"] = zero_views_missing
-yt_pre4_df["subs_zero_proxy_missing"]  = zero_subs_missing
-yt_pre4_df
+yt_pre4_clean["views_zero_proxy_missing"] = zero_views_missing
+yt_pre4_clean["subs_zero_proxy_missing"]  = zero_subs_missing
 
 #%%
 
-yt_pre4_df[yt_pre4_df["views_zero_proxy_missing"] == True]
+yt_pre4_clean[yt_pre4_clean["views_zero_proxy_missing"] == True]
 
 #%%
 
@@ -262,7 +214,7 @@ Those above with (Impute) are because of this, YG Marley's page was at 0 views
 
 #%%
 
-yt_pre4_df[yt_pre4_df["subs_zero_proxy_missing"] == True]
+yt_pre4_clean[yt_pre4_clean["subs_zero_proxy_missing"] == True]
 # None!
 
 #%%
@@ -272,53 +224,31 @@ Ok, let's turn the 0.0 values to NaNs and then impute them with linear interpola
 
 #%%
 
-import numpy as np
-
-#%%
-
 target_artists = ["Chuckyy", "Eric Church", "Karol G", "Mariah the Scientist", "Sleep Token"]
+mask = (yt_pre4_clean["artist"].isin(target_artists) & (yt_pre4_clean["views"] == 0.0))
+yt_pre4_clean.loc[mask, "views"] = np.nan
 
-mask = (yt_pre4_df["artist"].isin(target_artists) & (yt_pre4_df["views"] == 0.0))
-
-yt_pre4_df.loc[mask, "views"] = np.nan
-
-yt_pre4_df.loc[yt_pre4_df["artist"].isin(target_artists), "views"] = (
-    yt_pre4_df[yt_pre4_df["artist"].isin(target_artists)]
+yt_pre4_clean["views"] = (
+    yt_pre4_clean
     .groupby("artist")["views"]
     .transform(lambda s: s.interpolate())
 )
 
+yt_pre4_clean["subs"] = (
+    yt_pre4_clean
+    .groupby("artist")["subs"]
+    .transform(lambda s: s.interpolate())
+)
+
+yt_pre4_clean[yt_pre4_clean["artist"] == "Sleep Token"]["views"]
+
 #%%
 
-yt_pre4_df[yt_pre4_df["artist"] == "Sleep Token"]["views"]
-
-#%%
-
-df_filtered = yt_pre4_df[yt_pre4_df["artist"].isin(target_artists)]
-
-for (artist, platform), g in df_filtered.groupby(["artist", "platform"]):
-    g = g.sort_values("date")
-
-    fig, ax1 = plt.subplots(figsize=(8,4))
-    line_subs, = ax1.plot(g["date"], g["subs"], marker="o", label="Subscribers")
-    ax1.set_xlabel("Date"); ax1.set_ylabel("Subscribers")
-
-    ax2 = ax1.twinx()
-    line_views, = ax2.plot(g["date"], g["views"], marker=".", linestyle="--", label="Views")
-    ax2.set_ylabel("Views")
-
-    rd = g["release_date"].iloc[0]
-    ax1.axvline(rd, linestyle=":", linewidth=1)
-
-    fig.autofmt_xdate()
-    handles = [line_subs, line_views]
-    labels  = [h.get_label() for h in handles]
-
-    ax1.legend(handles, labels, loc="upper left")
-
-    plt.tight_layout()
-    plt.savefig(f"graphs/yt_imputed/youtube_pre4_{artist}_{platform}.png", dpi=150)
-    plt.close(fig)
+plot_two_metrics(yt_pre4_clean, metric1="subs", metric2="views",
+                artists=["Chuckyy", "Eric Church", "Karol G", 
+                "Mariah the Scientist", "Sleep Token"],
+                 outdir="graphs/yt_imputed",
+                 filename_pattern="yt_{artist}_{platform}.png")
 
 #%%
 
@@ -334,8 +264,6 @@ instagram = instagram.merge(
     how="left"
 )
 
-#%%
-
 instagram["date"] = pd.to_datetime(instagram["date"])
 instagram["release_date"] = pd.to_datetime(instagram["release_date"])
 
@@ -345,32 +273,31 @@ mask = (
 )
 
 ig_pre4_df = instagram.loc[mask, ["artist","platform","date","release_date","followers","following", "media"]].copy()
-
 ig_pre4_df = ig_pre4_df.sort_values(["artist","date"]).reset_index(drop=True)
-ig_pre4_df
+
+ig_pre4_clean = expand_to_full_window(ig_pre4_df, ("artist","platform"), "date", "release_date", 28)
 
 #%%
-
 grp = ["artist", "platform"]
 
 # 1) Mark zeros that are almost surely "missing" (group has some positive values)
-followers_has_pos = ig_pre4_df.groupby(grp)["followers"].transform("max") > 0
-media_has_pos  = ig_pre4_df.groupby(grp)["media"].transform("max")  > 0
+followers_has_pos = ig_pre4_clean.groupby(grp)["followers"].transform("max") > 0
+media_has_pos  = ig_pre4_clean.groupby(grp)["media"].transform("max")  > 0
 
-zero_followers_missing = (ig_pre4_df["followers"] == 0) & followers_has_pos
-zero_media_missing  = (ig_pre4_df["media"]  == 0) & media_has_pos
+zero_followers_missing = (ig_pre4_clean["followers"] == 0) & followers_has_pos
+zero_media_missing  = (ig_pre4_clean["media"]  == 0) & media_has_pos
 
-ig_pre4_df["followers_zero_proxy_missing"] = zero_followers_missing
-ig_pre4_df["media_zero_proxy_missing"]  = zero_media_missing
-ig_pre4_df
+ig_pre4_clean["followers_zero_proxy_missing"] = zero_followers_missing
+ig_pre4_clean["media_zero_proxy_missing"]  = zero_media_missing
 
 #%%
 
-ig_pre4_df[ig_pre4_df["followers_zero_proxy_missing"] == True]
+ig_pre4_clean[ig_pre4_clean["followers_zero_proxy_missing"] == True]
 # None!
+
 #%%
 
-ig_pre4_df[ig_pre4_df["media_zero_proxy_missing"] == True]
+ig_pre4_clean[ig_pre4_clean["media_zero_proxy_missing"] == True]
 
 #%%
 """
@@ -396,29 +323,35 @@ Also, none occured during the SocialBlade API Outage...
 
 #%%
 
-for (artist, platform), g in ig_pre4_df.groupby(["artist", "platform"]):
-    g = g.sort_values("date")
+plot_two_metrics(ig_pre4_clean, metric1="followers", metric2="media",
+                 outdir="graphs/ig_original",
+                 filename_pattern="ig_{artist}_{platform}.png")
 
-    fig, ax1 = plt.subplots(figsize=(8,4))
-    line_followers, = ax1.plot(g["date"], g["followers"], marker="o", label="Followers")
-    ax1.set_xlabel("Date"); ax1.set_ylabel("Followers")
+#%%
+"""
+There are instances after using expand to full window where we need to beware of NaNs
+and impute those, rather than just 0s
 
-    ax2 = ax1.twinx()
-    line_media, = ax2.plot(g["date"], g["media"], marker=".", linestyle="--", label="Media")
-    ax2.set_ylabel("Media")
+Let's impute, but skip the protocol of making 0s NaNs
+"""
 
-    rd = g["release_date"].iloc[0]
-    ax1.axvline(rd, linestyle=":", linewidth=1)
+ig_pre4_clean["followers"] = (
+    ig_pre4_clean
+    .groupby("artist")["followers"]
+    .transform(lambda s: s.interpolate())
+)
 
-    fig.autofmt_xdate()
-    handles = [line_followers, line_media]
-    labels  = [h.get_label() for h in handles]
+ig_pre4_clean["media"] = (
+    ig_pre4_clean
+    .groupby("artist")["media"]
+    .transform(lambda s: s.interpolate())
+)
 
-    ax1.legend(handles, labels, loc="upper left")
+#%%
 
-    plt.tight_layout()
-    plt.savefig(f"graphs/ig/instagram_pre4_{artist}_{platform}.png", dpi=150)
-    plt.close(fig)
+plot_two_metrics(ig_pre4_clean, metric1="followers", metric2="media",
+                 outdir="graphs/ig_imputed",
+                 filename_pattern="ig_{artist}_{platform}.png")
 
 #%%
 """
@@ -433,8 +366,6 @@ tiktok = tiktok.merge(
     how="left"
 )
 
-#%%
-
 tiktok["date"] = pd.to_datetime(tiktok["date"])
 tiktok["release_date"] = pd.to_datetime(tiktok["release_date"])
 
@@ -444,31 +375,30 @@ mask = (
 )
 
 tt_pre4_df = tiktok.loc[mask, ["artist","platform","date","release_date","followers","following", "uploads", "likes"]].copy()
-
 tt_pre4_df = tt_pre4_df.sort_values(["artist","date"]).reset_index(drop=True)
-tt_pre4_df
+
+tt_pre4_clean = expand_to_full_window(tt_pre4_df, ("artist","platform"), "date", "release_date", 28)
 
 #%%
 
 grp = ["artist", "platform"]
 
 # 1) Mark zeros that are almost surely "missing" (group has some positive values)
-followers_has_pos = tt_pre4_df.groupby(grp)["followers"].transform("max") > 0
-uploads_has_pos  = tt_pre4_df.groupby(grp)["uploads"].transform("max")  > 0
-likes_has_pos  = tt_pre4_df.groupby(grp)["likes"].transform("max")  > 0
+followers_has_pos = tt_pre4_clean.groupby(grp)["followers"].transform("max") > 0
+uploads_has_pos  = tt_pre4_clean.groupby(grp)["uploads"].transform("max")  > 0
+likes_has_pos  = tt_pre4_clean.groupby(grp)["likes"].transform("max")  > 0
 
-zero_followers_missing = (tt_pre4_df["followers"] == 0) & followers_has_pos
-zero_media_missing  = (tt_pre4_df["uploads"]  == 0) & uploads_has_pos
-zero_likes_missing  = (tt_pre4_df["likes"]  == 0) & likes_has_pos
+zero_followers_missing = (tt_pre4_clean["followers"] == 0) & followers_has_pos
+zero_media_missing  = (tt_pre4_clean["uploads"]  == 0) & uploads_has_pos
+zero_likes_missing  = (tt_pre4_clean["likes"]  == 0) & likes_has_pos
 
-tt_pre4_df["followers_zero_proxy_missing"] = zero_followers_missing
-tt_pre4_df["uploads_zero_proxy_missing"]  = zero_media_missing
-tt_pre4_df["likes_zero_proxy_missing"]  = zero_likes_missing
-tt_pre4_df
+tt_pre4_clean["followers_zero_proxy_missing"] = zero_followers_missing
+tt_pre4_clean["uploads_zero_proxy_missing"]  = zero_media_missing
+tt_pre4_clean["likes_zero_proxy_missing"]  = zero_likes_missing
 
 #%%
 
-tt_pre4_df[tt_pre4_df["followers_zero_proxy_missing"] == True]
+tt_pre4_clean[tt_pre4_clean["followers_zero_proxy_missing"] == True]
 
 """
 Jack Harlow (Impute)
@@ -481,7 +411,7 @@ You can tell visually from their graphs, that these are all errors.
 """
 #%%
 
-tt_pre4_df[tt_pre4_df["uploads_zero_proxy_missing"] == True]
+tt_pre4_clean[tt_pre4_clean["uploads_zero_proxy_missing"] == True]
 
 """
 Doja Cat (No Need to Impute)
@@ -491,39 +421,144 @@ Roddy Ricch (No Need to Impute)
 The Chainsmokers (No Need to Impute)
 Tito Double P (No Need to Impute)
 
-It os common for artists to archive and unarchive posts in quantities. 
+It is common for artists to archive and unarchive posts in quantities. 
 
 No need to impute or be concerned. 
 """
 
 #%%
 
-tt_pre4_df[tt_pre4_df["likes_zero_proxy_missing"] == True]
+tt_pre4_clean[tt_pre4_clean["likes_zero_proxy_missing"] == True]
 # None!
 
 #%%
 
-for (artist, platform), g in tt_pre4_df.groupby(["artist", "platform"]):
-    g = g.sort_values("date")
+plot_two_metrics(tt_pre4_clean, metric1="followers", metric2="likes",
+                 outdir="graphs/tt_original",
+                 filename_pattern="tt_{artist}_{platform}.png")
 
-    fig, ax1 = plt.subplots(figsize=(8,4))
-    line_followers, = ax1.plot(g["date"], g["followers"], marker="o", label="Followers")
-    ax1.set_xlabel("Date"); ax1.set_ylabel("Followers")
+#%%
+# Impute Tiktok Followers for these artists
 
-    ax2 = ax1.twinx()
-    line_uploads, = ax2.plot(g["date"], g["uploads"], marker=".", linestyle="--", label="Uploads")
-    ax2.set_ylabel("Uploads")
+target_artists = ["Jack Harlow", "Jonas Brothers", "Labrinth", "Teddy Swims", "Tim McGraw"]
+mask = (tt_pre4_clean["artist"].isin(target_artists) & (tt_pre4_clean["followers"] == 0.0))
+tt_pre4_clean.loc[mask, "followers"] = np.nan
 
-    rd = g["release_date"].iloc[0]
-    ax1.axvline(rd, linestyle=":", linewidth=1)
+tt_pre4_clean["followers"] = (
+    tt_pre4_clean
+    .groupby("artist")["followers"]
+    .transform(lambda s: s.interpolate())
+)
 
-    fig.autofmt_xdate()
-    handles = [line_followers, line_uploads]
-    labels  = [h.get_label() for h in handles]
+tt_pre4_clean["uploads"] = (
+    tt_pre4_clean
+    .groupby("artist")["uploads"]
+    .transform(lambda s: s.interpolate())
+)
 
-    ax1.legend(handles, labels, loc="upper left")
+tt_pre4_clean["likes"] = (
+    tt_pre4_clean
+    .groupby("artist")["likes"]
+    .transform(lambda s: s.interpolate())
+)
 
-    plt.tight_layout()
-    plt.savefig(f"graphs/tt/tiktok_pre4_{artist}_{platform}.png", dpi=150)
-    plt.close(fig)
+tt_pre4_clean[tt_pre4_clean["artist"] == "Jack Harlow"]["followers"]
+
+#%%
+
+plot_two_metrics(tt_pre4_clean, metric1="followers", metric2="likes",
+                 outdir="graphs/tt_imputed",
+                 filename_pattern="tt_{artist}_{platform}.png")
+
 # %%
+"""
+Ok, we've linearly interpolated missing time-series data for artists!
+
+Now we can begin calculating features around social data...
+
+Release Date features:
+- Parse total Followers / Subscribers (On release date)
+- Parse total Likes / Views (On release date)
+
+Posting Features:
+- Compute average daily posts by Artist (4 weeks prior release)
+
+Growth Rate features:
+- Compute weekly growth rate for Followers / Subscribers (4 weeks prior release)
+- Compute weekly growth rate for Likes / Views (4 weeks prior release)
+"""
+
+#%%
+# We can start by making a new column in each of our pre4_df's for release date values
+
+release_rows = yt_pre4_clean[yt_pre4_clean["date"] == yt_pre4_clean["release_date"]][
+    ["artist", "release_date", "subs", "views"]
+].rename(columns={"subs": "subs_release_date", "views": "views_release_date"})
+
+yt_pre4_clean = yt_pre4_clean.merge(
+    release_rows,
+    on=["artist", "release_date"],
+    how="left"
+)
+
+yt_pre4_clean.drop(columns=["views_zero_proxy_missing", "subs_zero_proxy_missing"], inplace=True)
+
+# TT: followers, uploads, likes
+release_rows = tt_pre4_clean[tt_pre4_clean["date"] == tt_pre4_clean["release_date"]][
+    ["artist", "release_date", "followers", "uploads", "likes"]
+].rename(columns={"followers": "followers_release_date", "uploads": "uploads_release_date", "likes": "likes_release_date"})
+
+tt_pre4_clean = tt_pre4_clean.merge(
+    release_rows,
+    on=["artist", "release_date"],
+    how="left"
+)
+
+tt_pre4_clean.drop(columns=["followers_zero_proxy_missing", "uploads_zero_proxy_missing", "likes_zero_proxy_missing"], inplace=True)
+
+# IG: followers, media
+release_rows = ig_pre4_clean[ig_pre4_clean["date"] == ig_pre4_clean["release_date"]][
+    ["artist", "release_date", "followers", "media"]
+].rename(columns={"followers": "followers_release_date", "media": "media_release_date"})
+
+ig_pre4_clean = ig_pre4_clean.merge(
+    release_rows,
+    on=["artist", "release_date"],
+    how="left"
+)
+
+ig_pre4_clean.drop(columns=["followers_zero_proxy_missing", "media_zero_proxy_missing"], inplace=True)
+
+#%%
+
+print(ig_pre4_clean[ig_pre4_clean["media_release_date"].isna()]["artist"].unique())
+print(ig_pre4_clean[ig_pre4_clean["followers_release_date"].isna()]["artist"].unique())
+
+# %%
+
+print(tt_pre4_clean[tt_pre4_clean["followers_release_date"].isna()]["artist"].unique())
+print(tt_pre4_clean[tt_pre4_clean["uploads_release_date"].isna()]["artist"].unique())
+print(tt_pre4_clean[tt_pre4_clean["likes_release_date"].isna()]["artist"].unique())
+
+# %%
+
+print(yt_pre4_clean[yt_pre4_clean["subs_release_date"].isna()]["artist"].unique())
+print(yt_pre4_clean[yt_pre4_clean["views_release_date"].isna()]["artist"].unique())
+
+# %%
+"""
+Ok, we now have the release date values for
+Instagram:
+- followers
+- media
+
+TikTok:
+- followers
+- uploads
+- likes
+
+YouTube:
+- subs
+- views
+"""
+
