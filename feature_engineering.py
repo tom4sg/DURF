@@ -493,9 +493,12 @@ Growth Rate features:
 
 release_rows = yt_pre4_clean[yt_pre4_clean["date"] == yt_pre4_clean["release_date"]][
     ["artist", "release_date", "subs", "views"]
-].rename(columns={"subs": "subs_release_date", "views": "views_release_date"})
+].rename(columns={"subs": "yt_subs_release_date", "views": "yt_views_release_date"})
 
-yt_pre4_clean = yt_pre4_clean.merge(
+feature_df["release_date"] = pd.to_datetime(feature_df["release_date"])
+release_rows["release_date"] = pd.to_datetime(release_rows["release_date"])
+
+feature_df = feature_df.merge(
     release_rows,
     on=["artist", "release_date"],
     how="left"
@@ -506,9 +509,9 @@ yt_pre4_clean.drop(columns=["views_zero_proxy_missing", "subs_zero_proxy_missing
 # TT: followers, uploads, likes
 release_rows = tt_pre4_clean[tt_pre4_clean["date"] == tt_pre4_clean["release_date"]][
     ["artist", "release_date", "followers", "uploads", "likes"]
-].rename(columns={"followers": "followers_release_date", "uploads": "uploads_release_date", "likes": "likes_release_date"})
+].rename(columns={"followers": "tt_followers_release_date", "uploads": "tt_uploads_release_date", "likes": "tt_likes_release_date"})
 
-tt_pre4_clean = tt_pre4_clean.merge(
+feature_df = feature_df.merge(
     release_rows,
     on=["artist", "release_date"],
     how="left"
@@ -519,46 +522,239 @@ tt_pre4_clean.drop(columns=["followers_zero_proxy_missing", "uploads_zero_proxy_
 # IG: followers, media
 release_rows = ig_pre4_clean[ig_pre4_clean["date"] == ig_pre4_clean["release_date"]][
     ["artist", "release_date", "followers", "media"]
-].rename(columns={"followers": "followers_release_date", "media": "media_release_date"})
+].rename(columns={"followers": "ig_followers_release_date", "media": "ig_media_release_date"})
 
-ig_pre4_clean = ig_pre4_clean.merge(
+feature_df = feature_df.merge(
     release_rows,
     on=["artist", "release_date"],
     how="left"
 )
 
 ig_pre4_clean.drop(columns=["followers_zero_proxy_missing", "media_zero_proxy_missing"], inplace=True)
+feature_df
 
 #%%
 
-print(ig_pre4_clean[ig_pre4_clean["media_release_date"].isna()]["artist"].unique())
-print(ig_pre4_clean[ig_pre4_clean["followers_release_date"].isna()]["artist"].unique())
+ig_pre4_clean = ig_pre4_clean.copy()
+ig_pre4_clean['date'] = pd.to_datetime(ig_pre4_clean['date'], errors='coerce')
+ig_pre4_clean = ig_pre4_clean.sort_values(['artist','date'])
 
-# %%
+# For growth rate, let's calculate geometric mean - 1 (CAGR style)
+ig_pre4_clean['ig_media_cgr_4w'] = (
+    ig_pre4_clean
+      .groupby('artist')['media']
+      .transform(lambda s: ((s / s.shift(28))**(1/28) - 1) * 100)
+)
 
-print(tt_pre4_clean[tt_pre4_clean["followers_release_date"].isna()]["artist"].unique())
-print(tt_pre4_clean[tt_pre4_clean["uploads_release_date"].isna()]["artist"].unique())
-print(tt_pre4_clean[tt_pre4_clean["likes_release_date"].isna()]["artist"].unique())
+ig_pre4_clean['ig_followers_cgr_4w'] = (
+    ig_pre4_clean
+      .groupby('artist')['followers']
+      .transform(lambda s: ((s / s.shift(28))**(1/28) - 1) * 100)
+)
 
-# %%
+tt_pre4_clean = tt_pre4_clean.copy()
+tt_pre4_clean['date'] = pd.to_datetime(tt_pre4_clean['date'], errors='coerce')
+tt_pre4_clean = tt_pre4_clean.sort_values(['artist','date'])
 
-print(yt_pre4_clean[yt_pre4_clean["subs_release_date"].isna()]["artist"].unique())
-print(yt_pre4_clean[yt_pre4_clean["views_release_date"].isna()]["artist"].unique())
 
-# %%
+tt_pre4_clean['tt_followers_cgr_4w'] = (
+    tt_pre4_clean
+      .groupby('artist')['followers']
+      .transform(lambda s: ((s / s.shift(28))**(1/28) - 1) * 100)
+)
+
+tt_pre4_clean['tt_uploads_cgr_4w'] = (
+    tt_pre4_clean
+      .groupby('artist')['uploads']
+      .transform(lambda s: ((s / s.shift(28))**(1/28) - 1) * 100)
+)
+
+tt_pre4_clean['tt_likes_cgr_4w'] = (
+    tt_pre4_clean
+      .groupby('artist')['likes']
+      .transform(lambda s: ((s / s.shift(28))**(1/28) - 1) * 100)
+)
+
+yt_pre4_clean = yt_pre4_clean.copy()
+yt_pre4_clean['date'] = pd.to_datetime(yt_pre4_clean['date'], errors='coerce')
+yt_pre4_clean = yt_pre4_clean.sort_values(['artist','date'])
+
+yt_pre4_clean['yt_subs_cgr_4w'] = (
+    yt_pre4_clean
+      .groupby('artist')['subs']
+      .transform(lambda s: ((s / s.shift(28))**(1/28) - 1) * 100)
+)
+
+yt_pre4_clean['yt_views_cgr_4w'] = (
+    yt_pre4_clean
+      .groupby('artist')['views']
+      .transform(lambda s: ((s / s.shift(28))**(1/28) - 1) * 100)
+)
+
+#%%
+
+# Instagram
+ig_feat = (
+    ig_pre4_clean
+      .loc[ig_pre4_clean['date'] == ig_pre4_clean['release_date'],
+           ['artist','release_date','ig_media_cgr_4w','ig_followers_cgr_4w']]
+      .drop_duplicates(['artist','release_date'])
+)
+
+# TikTok
+tt_feat = (
+    tt_pre4_clean
+      .loc[tt_pre4_clean['date'] == tt_pre4_clean['release_date'],
+           ['artist','release_date','tt_followers_cgr_4w','tt_uploads_cgr_4w','tt_likes_cgr_4w']]
+      .drop_duplicates(['artist','release_date'])
+)
+
+# YouTube
+yt_feat = (
+    yt_pre4_clean
+      .loc[yt_pre4_clean['date'] == yt_pre4_clean['release_date'],
+           ['artist','release_date','yt_subs_cgr_4w','yt_views_cgr_4w']]
+      .drop_duplicates(['artist','release_date'])
+)
+
+# Now merge on BOTH keys
+feature_df = (
+    feature_df
+      .merge(ig_feat, on=['artist','release_date'], how='left', validate='many_to_one')
+      .merge(tt_feat, on=['artist','release_date'], how='left', validate='many_to_one')
+      .merge(yt_feat, on=['artist','release_date'], how='left', validate='many_to_one')
+)
+feature_df
+
+#%%
+
+feature_df.to_csv("data/processed_data/feature_df.csv", index=False)
+#%%
+
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
+
+mask = (feature_df["yt_views_cgr_4w"] < 100_000) & (feature_df["yt_views_cgr_4w"] > -1)
+filtered = feature_df.loc[mask, "yt_views_cgr_4w"]
+
+plt.figure(figsize=(8,5))
+plt.hist(filtered * 100, bins=50)
+plt.xlabel("YouTube Views 4-Week Growth Rate")
+plt.ylabel("Frequency")
+plt.title("Distribution of YouTube Views 4-Week Growth Rate")
+plt.tight_layout()
+plt.show()
+
+#%%
+
+# import matplotlib.pyplot as plt
+# from matplotlib.ticker import FuncFormatter
+
+# def billions(x, pos):
+#     return f'{x/1e9:.1f}B'
+
+# def millions(x, pos):
+#     return f'{x/1e6:.1f}M'
+
+#%%
+
+# Instagram
+
+# ig_followers_at_release = ig_pre4_clean.groupby('artist')['followers_release_date'].first()
+# ig_media_at_release = ig_pre4_clean.groupby('artist')['media_release_date'].first()
+
+# plt.figure(figsize=(8,5))
+# plt.hist(ig_followers_at_release, bins=50)
+# plt.xlabel("Followers (Millions)")
+# plt.ylabel("Artist Count")
+# plt.title("Distribution of Instagram Followers (release-date)")
+
+# ax = plt.gca()
+# ax.xaxis.set_major_formatter(FuncFormatter(millions))
+# plt.tight_layout()
+# plt.show()
+
+# plt.figure(figsize=(8,5))
+# plt.hist(ig_media_at_release, bins=50)
+# plt.xlabel("All-time Uploads")
+# plt.ylabel("Artist Count")
+# plt.title("Distribution of all-time Instagram uploads (release-date)")
+
+# ax = plt.gca()
+# plt.tight_layout()
+# plt.show()
+
+# #%%
+
+# # TikTok
+
+# tt_followers_at_release = tt_pre4_clean.groupby('artist')['followers_release_date'].first()
+# tt_uploads_at_release = tt_pre4_clean.groupby('artist')['uploads_release_date'].first()
+# tt_likes_at_release = tt_pre4_clean.groupby('artist')['likes_release_date'].first()
+
+# plt.figure(figsize=(8,5))
+# plt.hist(tt_followers_at_release, bins=50)
+# plt.xlabel("Followers (Millions)")
+# plt.ylabel("Artist Count")
+# plt.title("Distribution of TikTok Followers (release-date)")
+
+# ax = plt.gca()
+# ax.xaxis.set_major_formatter(FuncFormatter(millions))
+# plt.tight_layout()
+# plt.show()
+
+# plt.figure(figsize=(8,5))
+# plt.hist(tt_uploads_at_release, bins=50)
+# plt.xlabel("All-time Uploads")
+# plt.ylabel("Artist Count")
+# plt.title("Distribution of all-time TikTok uploads (release-date)")
+
+# ax = plt.gca()
+# plt.tight_layout()
+# plt.show()
+
+# plt.figure(figsize=(8,5))
+# plt.hist(tt_likes_at_release, bins=50)
+# plt.xlabel("All-time Likes (Billions)")
+# plt.ylabel("Artist Count")
+# plt.title("Distribution of all-time TikTok Likes (release-date)")
+
+# ax = plt.gca()
+# ax.xaxis.set_major_formatter(FuncFormatter(billions))
+# plt.tight_layout()
+# plt.show()
+
+# #%%
+# # YouTube
+
+# yt_views_at_release = yt_pre4_clean.groupby('artist')['views_release_date'].first()
+# yt_subs_at_release = yt_pre4_clean.groupby('artist')['subs_release_date'].first()
+
+# plt.figure(figsize=(8,5))
+# plt.hist(yt_views_at_release, bins=50)
+# plt.xlabel("All-Time Views on release date (Billions)")
+# plt.ylabel("Count")
+# plt.title("Distribution all-time YouTube Views (release-date)")
+
+# ax = plt.gca()
+# ax.xaxis.set_major_formatter(FuncFormatter(billions))
+# plt.tight_layout()
+# plt.show()
+
+# plt.figure(figsize=(8,5))
+# plt.hist(yt_subs_at_release, bins=50)
+# plt.xlabel("Subscribers on release date (Millions)")
+# plt.ylabel("Count")
+# plt.title("Distribution of YouTube Subscribers (release-date)")
+
+# ax = plt.gca()
+# ax.xaxis.set_major_formatter(FuncFormatter(millions))
+# plt.tight_layout()
+# plt.show()
+
 """
-Ok, we now have the release date values for
-Instagram:
-- followers
-- media
-
-TikTok:
-- followers
-- uploads
-- likes
-
-YouTube:
-- subs
-- views
+Statistical Analysis with Time-series data
 """
 
+
+# %%

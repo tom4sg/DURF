@@ -15,14 +15,28 @@ def expand_to_full_window(
     filled = []
     for keys, g in d.groupby(list(key_cols), dropna=False):
         rd = g[release_col].iloc[0]
+
+        # Taking date range from 38 days back to release date
         window = pd.date_range(rd - pd.Timedelta(days=days_back), rd, freq="D")
 
         base = pd.DataFrame({date_col: window})
+        # date
+        # 0 2022-07-17
+        # 1 2022-07-18
+        # 2 2022-07-19
+        # 3 2022-07-20
         for k, v in zip(key_cols, keys):
             base[k] = v
         base[release_col] = rd
 
+        #         date    artist   platform release_date
+        # 0 2022-07-17     d4vd  instagram   2022-07-20
+        # 1 2022-07-18     d4vd  instagram   2022-07-20
+        # 2 2022-07-19     d4vd  instagram   2022-07-20
+        # 3 2022-07-20     d4vd  instagram   2022-07-20
+
         merged = base.merge(g, on=[*key_cols, date_col, release_col], how="left", indicator=True)
+        # Above means keep every row from base, match rows from g when all columns match
         merged["was_inserted"] = merged["_merge"].eq("left_only")
         merged = merged.drop(columns="_merge")
         filled.append(merged)
