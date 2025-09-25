@@ -434,6 +434,107 @@ plt.title("Distribution of YouTube Views 4-Week Growth Rate")
 plt.tight_layout()
 plt.show()
 
+# %%
+
+import pandas as pd
+feature_df = pd.read_csv('data/processed_data/feature_df.csv')
+instagram = pd.read_csv('data/raw_data/social_archives/instagram_archive.csv')
+instagram = instagram.drop(columns=['Unnamed: 0'])
+instagram["date"] = pd.to_datetime(instagram["date"])
+feature_df["release_date"] = pd.to_datetime(feature_df["release_date"])
+ig_nonzero = instagram[instagram['followers'] > 0]
+earliest_per_artist = ig_nonzero.groupby("artist_id")["date"].min()
+latest_per_artist = ig_nonzero.groupby("artist_id")["date"].max()
+
+ig_coverage = feature_df.merge(
+    earliest_per_artist.rename('ig_earliest'),
+    left_on='artist', right_index=True, how='left'
+).merge(
+    latest_per_artist.rename('ig_latest'),
+    left_on='artist', right_index=True, how='left'
+)
+
+ig_coverage['days_before_release'] = (ig_coverage['release_date'] - ig_coverage['ig_earliest']).dt.days
+ig_coverage['days_after_release']  = (ig_coverage['ig_latest'] - ig_coverage['release_date']).dt.days
+
+tiktok = pd.read_csv('data/raw_data/social_archives/tiktok_archive.csv')
+tiktok = tiktok.drop(columns=['Unnamed: 0'])
+tiktok["date"] = pd.to_datetime(tiktok["date"])
+feature_df["release_date"] = pd.to_datetime(feature_df["release_date"])
+tt_nonzero = tiktok[tiktok['followers'] > 0]
+earliest_per_artist = tt_nonzero.groupby("artist_id")["date"].min()
+latest_per_artist = tt_nonzero.groupby("artist_id")["date"].max()
+tt_coverage = feature_df.merge(
+    earliest_per_artist.rename('tt_earliest'),
+    left_on='artist', right_index=True, how='left'
+).merge(
+    latest_per_artist.rename('tt_latest'),
+    left_on='artist', right_index=True, how='left'
+)
+
+tt_coverage['days_before_release'] = (tt_coverage['release_date'] - tt_coverage['tt_earliest']).dt.days
+tt_coverage['days_after_release']  = (tt_coverage['tt_latest'] - tt_coverage['release_date']).dt.days
+
+youtube = pd.read_csv('data/raw_data/social_archives/youtube_archive.csv')
+youtube = youtube.drop(columns=['Unnamed: 0'])
+youtube["date"] = pd.to_datetime(youtube["date"])
+feature_df["release_date"] = pd.to_datetime(feature_df["release_date"])
+yt_nonzero = youtube[youtube['subs'] > 0]
+earliest_per_artist = yt_nonzero.groupby("artist_id")["date"].min()
+latest_per_artist = yt_nonzero.groupby("artist_id")["date"].max()
+
+yt_coverage = feature_df.merge(
+    earliest_per_artist.rename('yt_earliest'),
+    left_on='artist', right_index=True, how='left'
+).merge(
+    latest_per_artist.rename('yt_latest'),
+    left_on='artist', right_index=True, how='left'
+)
+
+yt_coverage['days_before_release'] = (yt_coverage['release_date'] - yt_coverage['yt_earliest']).dt.days
+yt_coverage['days_after_release']  = (yt_coverage['yt_latest'] - yt_coverage['release_date']).dt.days
+
+#%%
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+months_thresholds = np.arange(1, 13)
+days_thresholds = months_thresholds * 30
+
+# assume you have three DataFrames: ig_coverage, yt_coverage, tt_coverage
+pre_counts_ig  = [(ig_coverage['days_before_release'] > d).sum() for d in days_thresholds]
+post_counts_ig = [(ig_coverage['days_after_release']  > d).sum() for d in days_thresholds]
+
+pre_counts_yt  = [(yt_coverage['days_before_release'] > d).sum() for d in days_thresholds]
+post_counts_yt = [(yt_coverage['days_after_release']  > d).sum() for d in days_thresholds]
+
+pre_counts_tt  = [(tt_coverage['days_before_release'] > d).sum() for d in days_thresholds]
+post_counts_tt = [(tt_coverage['days_after_release']  > d).sum() for d in days_thresholds]
+
+plt.figure(figsize=(10,6))
+
+# Instagram (violet-pink)
+plt.plot(months_thresholds, pre_counts_ig, color='#8A3AB9', label='Instagram Pre-release')
+plt.plot(months_thresholds, post_counts_ig, color='#8A3AB9', linestyle='--', label='Instagram Post-release')
+
+# YouTube (red)
+plt.plot(months_thresholds, pre_counts_yt, color='#FF0000', label='YouTube Pre-release')
+plt.plot(months_thresholds, post_counts_yt, color='#FF0000', linestyle='--', label='YouTube Post-release')
+
+# TikTok (muted teal)
+plt.plot(months_thresholds, pre_counts_tt, color='#4DB6AC', label='TikTok Pre-release')
+plt.plot(months_thresholds, post_counts_tt, color='#4DB6AC', linestyle='--', label='TikTok Post-release')
+
+plt.xlabel('Months of data (threshold)')
+plt.ylabel('Number of artists with more than threshold')
+plt.title('Artists exceeding X months of social data coverage')
+plt.grid(True)
+plt.legend()
+plt.show()
+
+# %%
+
 #%%
 
 # import matplotlib.pyplot as plt
@@ -540,5 +641,3 @@ plt.show()
 # ax.xaxis.set_major_formatter(FuncFormatter(millions))
 # plt.tight_layout()
 # plt.show()
-
-# %%
