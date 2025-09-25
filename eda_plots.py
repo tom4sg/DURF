@@ -405,3 +405,140 @@ plt.ylabel("Normalized (0–1)")
 plt.show()
 
 #%%
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import ast
+import seaborn as sns
+
+features = pd.read_csv('data/processed_data/feature_df.csv')
+
+# %%
+
+plt.scatter(features["ig_followers_cgr_4w"],features["lifespan"])
+plt.show()
+
+#%%
+
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
+
+mask = (feature_df["yt_views_cgr_4w"] < 100_000) & (feature_df["yt_views_cgr_4w"] > -1)
+filtered = feature_df.loc[mask, "yt_views_cgr_4w"]
+
+plt.figure(figsize=(8,5))
+plt.hist(filtered * 100, bins=50)
+plt.xlabel("YouTube Views 4-Week Growth Rate")
+plt.ylabel("Frequency")
+plt.title("Distribution of YouTube Views 4-Week Growth Rate")
+plt.tight_layout()
+plt.show()
+
+#%%
+
+# import matplotlib.pyplot as plt
+# from matplotlib.ticker import FuncFormatter
+
+# def billions(x, pos):
+#     return f'{x/1e9:.1f}B'
+
+# def millions(x, pos):
+#     return f'{x/1e6:.1f}M'
+
+#%%
+
+# Instagram
+
+# ig_followers_at_release = ig_pre4_clean.groupby('artist')['followers_release_date'].first()
+# ig_media_at_release = ig_pre4_clean.groupby('artist')['media_release_date'].first()
+
+# plt.figure(figsize=(8,5))
+# plt.hist(ig_followers_at_release, bins=50)
+# plt.xlabel("Followers (Millions)")
+# plt.ylabel("Artist Count")
+# plt.title("Distribution of Instagram Followers (release-date)")
+
+# ax = plt.gca()
+# ax.xaxis.set_major_formatter(FuncFormatter(millions))
+# plt.tight_layout()
+# plt.show()
+
+# plt.figure(figsize=(8,5))
+# plt.hist(ig_media_at_release, bins=50)
+# plt.xlabel("All-time Uploads")
+# plt.ylabel("Artist Count")
+# plt.title("Distribution of all-time Instagram uploads (release-date)")
+
+# ax = plt.gca()
+# plt.tight_layout()
+# plt.show()
+
+# #%%
+
+# # TikTok
+
+# tt_followers_at_release = tt_pre4_clean.groupby('artist')['followers_release_date'].first()
+# tt_uploads_at_release = tt_pre4_clean.groupby('artist')['uploads_release_date'].first()
+# tt_likes_at_release = tt_pre4_clean.groupby('artist')['likes_release_date'].first()
+
+# plt.figure(figsize=(8,5))
+# plt.hist(tt_followers_at_release, bins=50)
+# plt.xlabel("Followers (Millions)")
+# plt.ylabel("Artist Count")
+# plt.title("Distribution of TikTok Followers (release-date)")
+
+# ax = plt.gca()
+# ax.xaxis.set_major_formatter(FuncFormatter(millions))
+# plt.tight_layout()
+# plt.show()
+
+# plt.figure(figsize=(8,5))
+# plt.hist(tt_uploads_at_release, bins=50)
+# plt.xlabel("All-time Uploads")
+# plt.ylabel("Artist Count")
+# plt.title("Distribution of all-time TikTok uploads (release-date)")
+
+# ax = plt.gca()
+# plt.tight_layout()
+# plt.show()
+
+# plt.figure(figsize=(8,5))
+# plt.hist(tt_likes_at_release, bins=50)
+# plt.xlabel("All-time Likes (Billions)")
+# plt.ylabel("Artist Count")
+# plt.title("Distribution of all-time TikTok Likes (release-date)")
+
+# ax = plt.gca()
+# ax.xaxis.set_major_formatter(FuncFormatter(billions))
+# plt.tight_layout()
+# plt.show()
+
+# #%%
+# # YouTube
+
+# yt_views_at_release = yt_pre4_clean.groupby('artist')['views_release_date'].first()
+# yt_subs_at_release = yt_pre4_clean.groupby('artist')['subs_release_date'].first()
+
+# plt.figure(figsize=(8,5))
+# plt.hist(yt_views_at_release, bins=50)
+# plt.xlabel("All-Time Views on release date (Billions)")
+# plt.ylabel("Count")
+# plt.title("Distribution all-time YouTube Views (release-date)")
+
+# ax = plt.gca()
+# ax.xaxis.set_major_formatter(FuncFormatter(billions))
+# plt.tight_layout()
+# plt.show()
+
+# plt.figure(figsize=(8,5))
+# plt.hist(yt_subs_at_release, bins=50)
+# plt.xlabel("Subscribers on release date (Millions)")
+# plt.ylabel("Count")
+# plt.title("Distribution of YouTube Subscribers (release-date)")
+
+# ax = plt.gca()
+# ax.xaxis.set_major_formatter(FuncFormatter(millions))
+# plt.tight_layout()
+# plt.show()
+
+# %%

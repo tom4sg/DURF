@@ -195,6 +195,10 @@ yt_pre4_clean[yt_pre4_clean["views_zero_proxy_missing"] == True]
 
 #%%
 
+yt_pre4_clean[yt_pre4_clean["artist"] == "Chuckyy"]
+
+#%%
+
 """
 Artists missing views data:
 
@@ -628,133 +632,97 @@ feature_df
 
 #%%
 
-feature_df.to_csv("data/processed_data/feature_df.csv", index=False)
-#%%
-
-import matplotlib.pyplot as plt
-from matplotlib.ticker import FuncFormatter
-
-mask = (feature_df["yt_views_cgr_4w"] < 100_000) & (feature_df["yt_views_cgr_4w"] > -1)
-filtered = feature_df.loc[mask, "yt_views_cgr_4w"]
-
-plt.figure(figsize=(8,5))
-plt.hist(filtered * 100, bins=50)
-plt.xlabel("YouTube Views 4-Week Growth Rate")
-plt.ylabel("Frequency")
-plt.title("Distribution of YouTube Views 4-Week Growth Rate")
-plt.tight_layout()
-plt.show()
+social_handles = pd.read_csv('data/processed_data/social_handles.csv')
+social_handles = social_handles.drop(columns=['Unnamed: 0'])
+social_handles["has_ig"] = social_handles["ig_handle"].notnull()
+social_handles["has_tt"] = social_handles["tt_handle"].notnull()
+social_handles["has_yt"] = social_handles["yt_handle"].notnull()
+cols = ["ig_handle", "tt_handle", "yt_handle"]
+all_missing = social_handles[cols].isnull().all(axis=1)
+social_handles["has_social_media"] = ~all_missing
+social_handles.to_csv('data/processed_data/social_handles.csv', index=False)
 
 #%%
 
-# import matplotlib.pyplot as plt
-# from matplotlib.ticker import FuncFormatter
+feature_df = feature_df.merge(social_handles, on=['artist'], how='left', validate='many_to_one')
 
-# def billions(x, pos):
-#     return f'{x/1e9:.1f}B'
-
-# def millions(x, pos):
-#     return f'{x/1e6:.1f}M'
+#%%
+feature_df.to_csv('data/processed_data/feature_df_with_socials.csv', index=False)
 
 #%%
 
-# Instagram
-
-# ig_followers_at_release = ig_pre4_clean.groupby('artist')['followers_release_date'].first()
-# ig_media_at_release = ig_pre4_clean.groupby('artist')['media_release_date'].first()
-
-# plt.figure(figsize=(8,5))
-# plt.hist(ig_followers_at_release, bins=50)
-# plt.xlabel("Followers (Millions)")
-# plt.ylabel("Artist Count")
-# plt.title("Distribution of Instagram Followers (release-date)")
-
-# ax = plt.gca()
-# ax.xaxis.set_major_formatter(FuncFormatter(millions))
-# plt.tight_layout()
-# plt.show()
-
-# plt.figure(figsize=(8,5))
-# plt.hist(ig_media_at_release, bins=50)
-# plt.xlabel("All-time Uploads")
-# plt.ylabel("Artist Count")
-# plt.title("Distribution of all-time Instagram uploads (release-date)")
-
-# ax = plt.gca()
-# plt.tight_layout()
-# plt.show()
-
-# #%%
-
-# # TikTok
-
-# tt_followers_at_release = tt_pre4_clean.groupby('artist')['followers_release_date'].first()
-# tt_uploads_at_release = tt_pre4_clean.groupby('artist')['uploads_release_date'].first()
-# tt_likes_at_release = tt_pre4_clean.groupby('artist')['likes_release_date'].first()
-
-# plt.figure(figsize=(8,5))
-# plt.hist(tt_followers_at_release, bins=50)
-# plt.xlabel("Followers (Millions)")
-# plt.ylabel("Artist Count")
-# plt.title("Distribution of TikTok Followers (release-date)")
-
-# ax = plt.gca()
-# ax.xaxis.set_major_formatter(FuncFormatter(millions))
-# plt.tight_layout()
-# plt.show()
-
-# plt.figure(figsize=(8,5))
-# plt.hist(tt_uploads_at_release, bins=50)
-# plt.xlabel("All-time Uploads")
-# plt.ylabel("Artist Count")
-# plt.title("Distribution of all-time TikTok uploads (release-date)")
-
-# ax = plt.gca()
-# plt.tight_layout()
-# plt.show()
-
-# plt.figure(figsize=(8,5))
-# plt.hist(tt_likes_at_release, bins=50)
-# plt.xlabel("All-time Likes (Billions)")
-# plt.ylabel("Artist Count")
-# plt.title("Distribution of all-time TikTok Likes (release-date)")
-
-# ax = plt.gca()
-# ax.xaxis.set_major_formatter(FuncFormatter(billions))
-# plt.tight_layout()
-# plt.show()
-
-# #%%
-# # YouTube
-
-# yt_views_at_release = yt_pre4_clean.groupby('artist')['views_release_date'].first()
-# yt_subs_at_release = yt_pre4_clean.groupby('artist')['subs_release_date'].first()
-
-# plt.figure(figsize=(8,5))
-# plt.hist(yt_views_at_release, bins=50)
-# plt.xlabel("All-Time Views on release date (Billions)")
-# plt.ylabel("Count")
-# plt.title("Distribution all-time YouTube Views (release-date)")
-
-# ax = plt.gca()
-# ax.xaxis.set_major_formatter(FuncFormatter(billions))
-# plt.tight_layout()
-# plt.show()
-
-# plt.figure(figsize=(8,5))
-# plt.hist(yt_subs_at_release, bins=50)
-# plt.xlabel("Subscribers on release date (Millions)")
-# plt.ylabel("Count")
-# plt.title("Distribution of YouTube Subscribers (release-date)")
-
-# ax = plt.gca()
-# ax.xaxis.set_major_formatter(FuncFormatter(millions))
-# plt.tight_layout()
-# plt.show()
+# Things to think about when imputing with 0.0 for social values
+# In the situation where an artist doesn't have instagram, we can put in 0.0 for ig_followers
+# and put False for has_ig
+# Then, in the case where another artist actually has 0.0 ig_followers, has_ig as True will indicate that these fields
+# should be viewed differently
+# But, what if the artist has_ig, but we weren't able to get data on this artist for any reason?
 
 """
-Statistical Analysis with Time-series data
+Artist has no platform (structural zero; you fill with 0.0 but has_* = False).
+
+Artist has platform but your API failed / returned 0 (missing measurement masquerading as 0.0).
+
+How can we distinguish between these two events? I don't want to put 0.0 because
+there are instances where somebody has ig, but the api didn't return their data
+
+so if we simply use has_ig dummy, and make everything NaN 0.0, this would make it
+seem like artists with ig that had nan were getting no engagement
+
+Apparently we can use LightGBM/XGBoost
+
+as they have branches for missing values
 """
 
+feature_df[feature_df['yt_subs_release_date'] == 0]
+#%%
+
+instagram = pd.read_csv('data/raw_data/social_archives/instagram_archive.csv')
+instagram = instagram.drop(columns=['Unnamed: 0'])
+instagram["date"] = pd.to_datetime(instagram["date"])
+feature_df["release_date"] = pd.to_datetime(feature_df["release_date"])
+ig_nonzero = instagram[instagram['followers'] > 0]
+earliest_per_artist = ig_nonzero.groupby("artist_id")["date"].min()
+latest_per_artist = ig_nonzero.groupby("artist_id")["date"].max()
+feature_df[["artist", "release_date"]]
 
 # %%
+
+coverage = feature_df.merge(
+    earliest_per_artist.rename('ig_earliest'),
+    left_on='artist', right_index=True, how='left'
+).merge(
+    latest_per_artist.rename('ig_latest'),
+    left_on='artist', right_index=True, how='left'
+)
+
+coverage['days_before_release'] = (coverage['release_date'] - coverage['ig_earliest']).dt.days
+coverage['days_after_release']  = (coverage['ig_latest'] - coverage['release_date']).dt.days
+
+# %%
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# thresholds in months you care about
+months_thresholds = np.arange(1, 13)
+days_thresholds = months_thresholds * 30
+
+pre_counts = [(coverage['days_before_release'] > d).sum() for d in days_thresholds]
+post_counts = [(coverage['days_after_release'] > d).sum() for d in days_thresholds]
+
+plt.figure(figsize=(8,5))
+plt.plot(months_thresholds, pre_counts, label='Pre-release IG data')
+plt.plot(months_thresholds, post_counts, label='Post-release IG data')
+
+plt.xlabel('Months of IG data (threshold)')
+plt.ylabel('Number of artists with more than threshold')
+plt.title('Artists exceeding X months of IG data coverage')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# %%
+
+coverage[["artist","title", "ig_earliest", "release_date", "days_before_release"]]
+#%%
