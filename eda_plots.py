@@ -546,7 +546,7 @@ plt.show()
 # def millions(x, pos):
 #     return f'{x/1e6:.1f}M'
 
-#%%
+# #%%
 
 # Instagram
 
@@ -574,70 +574,70 @@ plt.show()
 # plt.tight_layout()
 # plt.show()
 
-# #%%
+# # #%%
 
-# # TikTok
+# # # TikTok
 
-# tt_followers_at_release = tt_pre4_clean.groupby('artist')['followers_release_date'].first()
-# tt_uploads_at_release = tt_pre4_clean.groupby('artist')['uploads_release_date'].first()
-# tt_likes_at_release = tt_pre4_clean.groupby('artist')['likes_release_date'].first()
+# # tt_followers_at_release = tt_pre4_clean.groupby('artist')['followers_release_date'].first()
+# # tt_uploads_at_release = tt_pre4_clean.groupby('artist')['uploads_release_date'].first()
+# # tt_likes_at_release = tt_pre4_clean.groupby('artist')['likes_release_date'].first()
 
-# plt.figure(figsize=(8,5))
-# plt.hist(tt_followers_at_release, bins=50)
-# plt.xlabel("Followers (Millions)")
-# plt.ylabel("Artist Count")
-# plt.title("Distribution of TikTok Followers (release-date)")
+# # plt.figure(figsize=(8,5))
+# # plt.hist(tt_followers_at_release, bins=50)
+# # plt.xlabel("Followers (Millions)")
+# # plt.ylabel("Artist Count")
+# # plt.title("Distribution of TikTok Followers (release-date)")
 
-# ax = plt.gca()
-# ax.xaxis.set_major_formatter(FuncFormatter(millions))
-# plt.tight_layout()
-# plt.show()
+# # ax = plt.gca()
+# # ax.xaxis.set_major_formatter(FuncFormatter(millions))
+# # plt.tight_layout()
+# # plt.show()
 
-# plt.figure(figsize=(8,5))
-# plt.hist(tt_uploads_at_release, bins=50)
-# plt.xlabel("All-time Uploads")
-# plt.ylabel("Artist Count")
-# plt.title("Distribution of all-time TikTok uploads (release-date)")
+# # plt.figure(figsize=(8,5))
+# # plt.hist(tt_uploads_at_release, bins=50)
+# # plt.xlabel("All-time Uploads")
+# # plt.ylabel("Artist Count")
+# # plt.title("Distribution of all-time TikTok uploads (release-date)")
 
-# ax = plt.gca()
-# plt.tight_layout()
-# plt.show()
+# # ax = plt.gca()
+# # plt.tight_layout()
+# # plt.show()
 
-# plt.figure(figsize=(8,5))
-# plt.hist(tt_likes_at_release, bins=50)
-# plt.xlabel("All-time Likes (Billions)")
-# plt.ylabel("Artist Count")
-# plt.title("Distribution of all-time TikTok Likes (release-date)")
+# # plt.figure(figsize=(8,5))
+# # plt.hist(tt_likes_at_release, bins=50)
+# # plt.xlabel("All-time Likes (Billions)")
+# # plt.ylabel("Artist Count")
+# # plt.title("Distribution of all-time TikTok Likes (release-date)")
 
-# ax = plt.gca()
-# ax.xaxis.set_major_formatter(FuncFormatter(billions))
-# plt.tight_layout()
-# plt.show()
+# # ax = plt.gca()
+# # ax.xaxis.set_major_formatter(FuncFormatter(billions))
+# # plt.tight_layout()
+# # plt.show()
 
-# #%%
-# # YouTube
+# # #%%
+# # # YouTube
 
-# yt_views_at_release = yt_pre4_clean.groupby('artist')['views_release_date'].first()
-# yt_subs_at_release = yt_pre4_clean.groupby('artist')['subs_release_date'].first()
+# # yt_views_at_release = yt_pre4_clean.groupby('artist')['views_release_date'].first()
+# # yt_subs_at_release = yt_pre4_clean.groupby('artist')['subs_release_date'].first()
 
-# plt.figure(figsize=(8,5))
-# plt.hist(yt_views_at_release, bins=50)
-# plt.xlabel("All-Time Views on release date (Billions)")
-# plt.ylabel("Count")
-# plt.title("Distribution all-time YouTube Views (release-date)")
+# # plt.figure(figsize=(8,5))
+# # plt.hist(yt_views_at_release, bins=50)
+# # plt.xlabel("All-Time Views on release date (Billions)")
+# # plt.ylabel("Count")
+# # plt.title("Distribution all-time YouTube Views (release-date)")
 
-# ax = plt.gca()
-# ax.xaxis.set_major_formatter(FuncFormatter(billions))
-# plt.tight_layout()
-# plt.show()
+# # ax = plt.gca()
+# # ax.xaxis.set_major_formatter(FuncFormatter(billions))
+# # plt.tight_layout()
+# # plt.show()
 
-# plt.figure(figsize=(8,5))
-# plt.hist(yt_subs_at_release, bins=50)
-# plt.xlabel("Subscribers on release date (Millions)")
-# plt.ylabel("Count")
-# plt.title("Distribution of YouTube Subscribers (release-date)")
+# # plt.figure(figsize=(8,5))
+# # plt.hist(yt_subs_at_release, bins=50)
+# # plt.xlabel("Subscribers on release date (Millions)")
+# # plt.ylabel("Count")
+# # plt.title("Distribution of YouTube Subscribers (release-date)")
 
-# ax = plt.gca()
-# ax.xaxis.set_major_formatter(FuncFormatter(millions))
-# plt.tight_layout()
-# plt.show()
+# # ax = plt.gca()
+# # ax.xaxis.set_major_formatter(FuncFormatter(millions))
+# # plt.tight_layout()
+# # plt.show()

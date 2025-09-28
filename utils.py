@@ -1,5 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import re
+import os
+
 
 def expand_to_full_window(
     df,
@@ -44,7 +47,7 @@ def expand_to_full_window(
     return pd.concat(filled, ignore_index=True)
 
 
-def plot_two_metrics(
+def plot_two_metrics_artist(
     df,
     metric1="subs",
     metric2="views",
@@ -102,4 +105,78 @@ def plot_two_metrics(
                 artist=artist, platform=platform
             )
             plt.savefig(f"{outdir}/{filename}", dpi=dpi)
+            plt.close(fig)
+
+def plot_two_metrics_song(
+    df,
+    metric1="subs",
+    metric2="views",
+    artists=None,
+    artist_col="artist",
+    song_col="song_id",
+    platform_col="platform",
+    date_col="date",
+    release_col="release_date",
+    outdir="graphs",
+    filename_pattern="{metric1}_{metric2}_{artist}_{song}_{platform}.png",
+    dpi=150,
+    show=False,
+):
+    """
+    Plot two metrics over time for each (artist, song_id, platform) group.
+    """
+    # optional filter
+    if artists is not None:
+        df = df[df[artist_col].isin(artists)]
+
+    # ensure output directory exists
+    os.makedirs(outdir, exist_ok=True)
+
+    # group by artist, song_id, platform
+    for (artist, song, platform), g in df.groupby([artist_col, song_col, platform_col]):
+        g = g.sort_values(date_col)
+
+        fig, ax1 = plt.subplots(figsize=(8, 4))
+        line1, = ax1.plot(
+            g[date_col], g[metric1],
+            marker="o", label=metric1
+        )
+        ax1.set_xlabel(date_col)
+        ax1.set_ylabel(metric1)
+
+        ax2 = ax1.twinx()
+        line2, = ax2.plot(
+            g[date_col], g[metric2],
+            marker=".", linestyle="--", label=metric2
+        )
+        ax2.set_ylabel(metric2)
+
+        # vertical line at release date (first row’s release_date)
+        rd = g[release_col].iloc[0]
+        ax1.axvline(rd, linestyle=":", linewidth=1)
+
+        fig.autofmt_xdate()
+
+        handles = [line1, line2]
+        labels = [h.get_label() for h in handles]
+        ax1.legend(handles, labels, loc="upper left")
+
+        plt.tight_layout()
+
+        if show:
+            plt.show()
+        else:
+            # sanitize values for filename
+            safe_artist = re.sub(r'[\\/*?:"<>|]', "_", str(artist))
+            safe_song = re.sub(r'[\\/*?:"<>|]', "_", str(song))
+            safe_platform = re.sub(r'[\\/*?:"<>|]', "_", str(platform))
+
+            filename = filename_pattern.format(
+                metric1=metric1,
+                metric2=metric2,
+                artist=safe_artist,
+                song=safe_song,
+                platform=safe_platform
+            )
+            plt.savefig(os.path.join(outdir, filename), dpi=dpi)
             plt.close(fig)
