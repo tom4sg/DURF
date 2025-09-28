@@ -353,6 +353,8 @@ and impute those, rather than just 0s
 
 Let's impute, but skip the protocol of making 0s NaNs
 """
+
+#%%
 df.loc[zero_followers_missing, "followers"] = np.nan
 
 grp_interp = ["song_id", "platform"]
@@ -555,7 +557,6 @@ feature_df = feature_df.merge(
 #%%
 
 ig_pre12_clean.drop(columns=["followers_zero_proxy_missing", "media_zero_proxy_missing"], inplace=True)
-feature_df
 
 #%%
 """
@@ -571,99 +572,372 @@ Maybe we can disregard cagr.
 
 """
 
-
 #%%
 
-ig_pre4_clean = ig_pre4_clean.copy()
-ig_pre4_clean['date'] = pd.to_datetime(ig_pre4_clean['date'], errors='coerce')
-ig_pre4_clean = ig_pre4_clean.sort_values(['artist','date'])
+ig_pre12_clean = ig_pre12_clean.copy()
+ig_pre12_clean['date'] = pd.to_datetime(ig_pre12_clean['date'], errors='coerce')
+ig_pre12_clean = ig_pre12_clean.sort_values(["song_id", "platform", "date"])
 
-# For growth rate, let's calculate geometric mean - 1 (CAGR style)
-ig_pre4_clean['ig_media_cgr_4w'] = (
-    ig_pre4_clean
-      .groupby('artist')['media']
-      .transform(lambda s: ((s / s.shift(28))**(1/28) - 1) * 100)
+ig_pre12_clean['ig_followers_diff_12m'] = (
+    ig_pre12_clean
+    .groupby('song_id')['followers']
+    .transform(lambda s: s - s.shift(365))
 )
 
-ig_pre4_clean['ig_followers_cgr_4w'] = (
-    ig_pre4_clean
-      .groupby('artist')['followers']
-      .transform(lambda s: ((s / s.shift(28))**(1/28) - 1) * 100)
+ig_pre12_clean['ig_followers_diff_6m'] = (
+    ig_pre12_clean
+    .groupby('song_id')['followers']
+    .transform(lambda s: s - s.shift(182))
 )
 
-tt_pre4_clean = tt_pre4_clean.copy()
-tt_pre4_clean['date'] = pd.to_datetime(tt_pre4_clean['date'], errors='coerce')
-tt_pre4_clean = tt_pre4_clean.sort_values(['artist','date'])
-
-
-tt_pre4_clean['tt_followers_cgr_4w'] = (
-    tt_pre4_clean
-      .groupby('artist')['followers']
-      .transform(lambda s: ((s / s.shift(28))**(1/28) - 1) * 100)
+ig_pre12_clean['ig_followers_diff_3m'] = (
+    ig_pre12_clean
+    .groupby('song_id')['followers']
+    .transform(lambda s: s - s.shift(91))
 )
 
-tt_pre4_clean['tt_uploads_cgr_4w'] = (
-    tt_pre4_clean
-      .groupby('artist')['uploads']
-      .transform(lambda s: ((s / s.shift(28))**(1/28) - 1) * 100)
+ig_pre12_clean['ig_followers_diff_1m'] = (
+    ig_pre12_clean
+    .groupby('song_id')['followers']
+    .transform(lambda s: s - s.shift(30))
 )
 
-tt_pre4_clean['tt_likes_cgr_4w'] = (
-    tt_pre4_clean
-      .groupby('artist')['likes']
-      .transform(lambda s: ((s / s.shift(28))**(1/28) - 1) * 100)
-)
-
-yt_pre4_clean = yt_pre4_clean.copy()
-yt_pre4_clean['date'] = pd.to_datetime(yt_pre4_clean['date'], errors='coerce')
-yt_pre4_clean = yt_pre4_clean.sort_values(['artist','date'])
-
-yt_pre4_clean['yt_subs_cgr_4w'] = (
-    yt_pre4_clean
-      .groupby('artist')['subs']
-      .transform(lambda s: ((s / s.shift(28))**(1/28) - 1) * 100)
-)
-
-yt_pre4_clean['yt_views_cgr_4w'] = (
-    yt_pre4_clean
-      .groupby('artist')['views']
-      .transform(lambda s: ((s / s.shift(28))**(1/28) - 1) * 100)
-)
-
-#%%
-
-# Instagram
 ig_feat = (
-    ig_pre4_clean
-      .loc[ig_pre4_clean['date'] == ig_pre4_clean['release_date'],
-           ['artist','release_date','ig_media_cgr_4w','ig_followers_cgr_4w']]
-      .drop_duplicates(['artist','release_date'])
+    ig_pre12_clean
+      .loc[ig_pre12_clean['date'] == ig_pre12_clean['release_date'],
+           ['song_id','release_date',
+           'ig_followers_diff_12m','ig_followers_diff_6m', 'ig_followers_diff_3m', 'ig_followers_diff_1m']]
+           .drop_duplicates(['song_id','release_date'])
 )
 
-# TikTok
-tt_feat = (
-    tt_pre4_clean
-      .loc[tt_pre4_clean['date'] == tt_pre4_clean['release_date'],
-           ['artist','release_date','tt_followers_cgr_4w','tt_uploads_cgr_4w','tt_likes_cgr_4w']]
-      .drop_duplicates(['artist','release_date'])
+#%%
+
+yt_pre12_clean = yt_pre12_clean.copy()
+yt_pre12_clean['date'] = pd.to_datetime(yt_pre12_clean['date'], errors='coerce')
+yt_pre12_clean = yt_pre12_clean.sort_values(["song_id", "platform", "date"])
+
+yt_pre12_clean['yt_subs_diff_12m'] = (
+    yt_pre12_clean
+    .groupby('song_id')['subs']
+    .transform(lambda s: s - s.shift(365))
 )
 
-# YouTube
+yt_pre12_clean['yt_subs_diff_6m'] = (
+    yt_pre12_clean
+    .groupby('song_id')['subs']
+    .transform(lambda s: s - s.shift(182))
+)
+
+yt_pre12_clean['yt_subs_diff_3m'] = (
+    yt_pre12_clean
+    .groupby('song_id')['subs']
+    .transform(lambda s: s - s.shift(91))
+)
+
+yt_pre12_clean['yt_subs_diff_1m'] = (
+    yt_pre12_clean
+    .groupby('song_id')['subs']
+    .transform(lambda s: s - s.shift(30))
+)
+
+yt_pre12_clean['yt_views_diff_12m'] = (
+    yt_pre12_clean
+    .groupby('song_id')['views']
+    .transform(lambda s: s - s.shift(365))
+)
+
+yt_pre12_clean['yt_views_diff_6m'] = (
+    yt_pre12_clean
+    .groupby('song_id')['views']
+    .transform(lambda s: s - s.shift(182))
+)
+
+yt_pre12_clean['yt_views_diff_3m'] = (
+    yt_pre12_clean
+    .groupby('song_id')['views']
+    .transform(lambda s: s - s.shift(91))
+)
+
+yt_pre12_clean['yt_views_diff_1m'] = (
+    yt_pre12_clean
+    .groupby('song_id')['views']
+    .transform(lambda s: s - s.shift(30))
+)
+
 yt_feat = (
-    yt_pre4_clean
-      .loc[yt_pre4_clean['date'] == yt_pre4_clean['release_date'],
-           ['artist','release_date','yt_subs_cgr_4w','yt_views_cgr_4w']]
-      .drop_duplicates(['artist','release_date'])
+    yt_pre12_clean
+      .loc[yt_pre12_clean['date'] == yt_pre12_clean['release_date'],
+           ['song_id','release_date',
+           'yt_subs_diff_12m','yt_subs_diff_6m', 'yt_subs_diff_3m', 'yt_subs_diff_1m',
+           'yt_views_diff_12m','yt_views_diff_6m', 'yt_views_diff_3m', 'yt_views_diff_1m']]
+      .drop_duplicates(['song_id','release_date'])
 )
+
+#%%
+
+tt_pre12_clean = tt_pre12_clean.copy()
+tt_pre12_clean['date'] = pd.to_datetime(tt_pre12_clean['date'], errors='coerce')
+tt_pre12_clean = tt_pre12_clean.sort_values(["song_id", "platform", "date"])
+
+tt_pre12_clean['tt_followers_diff_12m'] = (
+    tt_pre12_clean
+    .groupby('song_id')['followers']
+    .transform(lambda s: s - s.shift(365))
+)
+
+tt_pre12_clean['tt_followers_diff_6m'] = (
+    tt_pre12_clean
+    .groupby('song_id')['followers']
+    .transform(lambda s: s - s.shift(182))
+)
+
+tt_pre12_clean['tt_followers_diff_3m'] = (
+    tt_pre12_clean
+    .groupby('song_id')['followers']
+    .transform(lambda s: s - s.shift(91))
+)
+
+tt_pre12_clean['tt_followers_diff_1m'] = (
+    tt_pre12_clean
+    .groupby('song_id')['followers']
+    .transform(lambda s: s - s.shift(30))
+)
+
+tt_pre12_clean['tt_likes_diff_12m'] = (
+    tt_pre12_clean
+    .groupby('song_id')['likes']
+    .transform(lambda s: s - s.shift(365))
+)
+
+tt_pre12_clean['tt_likes_diff_6m'] = (
+    tt_pre12_clean
+    .groupby('song_id')['likes']
+    .transform(lambda s: s - s.shift(182))
+)
+
+tt_pre12_clean['tt_likes_diff_3m'] = (
+    tt_pre12_clean
+    .groupby('song_id')['likes']
+    .transform(lambda s: s - s.shift(91))
+)
+
+tt_pre12_clean['tt_likes_diff_1m'] = (
+    tt_pre12_clean
+    .groupby('song_id')['likes']
+    .transform(lambda s: s - s.shift(30))
+)
+
+tt_feat = (
+    tt_pre12_clean
+      .loc[tt_pre12_clean['date'] == tt_pre12_clean['release_date'],
+           ['song_id','release_date',
+           'tt_followers_diff_12m','tt_followers_diff_6m', 'tt_followers_diff_3m', 'tt_followers_diff_1m',
+           'tt_likes_diff_12m','tt_likes_diff_6m', 'tt_likes_diff_3m', 'tt_likes_diff_1m']]
+      .drop_duplicates(['song_id','release_date'])
+)
+
+#%%
+
+ig_pre12_clean['ig_followers_diff_daily'] = (
+    ig_pre12_clean
+    .groupby('song_id')['followers']
+    .transform(lambda s: s - s.shift(1))
+)
+
+ig_pre12_clean['ig_media_diff_daily'] = (
+    ig_pre12_clean
+    .groupby('song_id')['media']
+    .transform(lambda s: s - s.shift(1))
+)
+
+tt_pre12_clean['tt_followers_diff_daily'] = (
+    tt_pre12_clean
+    .groupby('song_id')['followers']
+    .transform(lambda s: s - s.shift(1))
+)
+
+tt_pre12_clean['tt_likes_diff_daily'] = (
+    tt_pre12_clean
+    .groupby('song_id')['likes']
+    .transform(lambda s: s - s.shift(1))
+)
+
+tt_pre12_clean['tt_uploads_diff_daily'] = (
+    tt_pre12_clean
+    .groupby('song_id')['uploads']
+    .transform(lambda s: s - s.shift(1))
+)
+
+yt_pre12_clean['yt_subs_diff_daily'] = (
+    yt_pre12_clean
+    .groupby('song_id')['subs']
+    .transform(lambda s: s - s.shift(1))
+)
+
+yt_pre12_clean['yt_views_diff_daily'] = (
+    yt_pre12_clean
+    .groupby('song_id')['views']
+    .transform(lambda s: s - s.shift(1))
+)
+
+#%%
 
 # Now merge on BOTH keys
 feature_df = (
     feature_df
-      .merge(ig_feat, on=['artist','release_date'], how='left', validate='many_to_one')
-      .merge(tt_feat, on=['artist','release_date'], how='left', validate='many_to_one')
-      .merge(yt_feat, on=['artist','release_date'], how='left', validate='many_to_one')
+      .merge(ig_feat, on=['song_id','release_date'], how='left', validate='many_to_one')
+      .merge(tt_feat, on=['song_id','release_date'], how='left', validate='many_to_one')
+      .merge(yt_feat, on=['song_id','release_date'], how='left', validate='many_to_one')
 )
 feature_df
+
+#%%
+
+artist_id = 'Eternity — Alex Warren'  # replace with the actual ID
+
+artist_df = (
+    tt_pre12_clean
+    .loc[tt_pre12_clean['song_id'] == artist_id]
+    .sort_values('date')  # make sure it's sorted chronologically
+)
+
+plt.figure(figsize=(10,5))
+plt.plot(
+    artist_df['date'],
+    artist_df['tt_likes_diff_daily'],
+    linestyle='-'
+)
+plt.axhline(0, color='gray', linewidth=1, linestyle='--')  # reference line at 0
+plt.title(f"Daily Tiktok Likes Change ({artist_id})")
+plt.xlabel('Date')
+plt.ylabel('Daily Like Change')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.legend()
+plt.show()
+
+#%%
+
+from matplotlib.ticker import FuncFormatter
+
+def millions(x, pos):
+    return f'{x/1e6:.1f}M'
+
+fig, axes = plt.subplots(2, 2, figsize=(14, 10), sharey=True)
+
+# column names and titles for each panel
+diff_cols = ['ig_followers_diff_1m',
+             'ig_followers_diff_3m',
+             'ig_followers_diff_6m',
+             'ig_followers_diff_12m']
+titles = ['Instagram Follower Change (1-month Pre-Release)',
+          'Instagram Follower Change (3-month Pre-Release)',
+          'Instagram Follower Change (6-month Pre-Release)',
+          'Instagram Follower Change (12-month Pre-Release)']
+
+# flatten axes array to 1D so we can loop
+axes = axes.ravel()
+
+for ax, col, title in zip(axes, diff_cols, titles):
+    ax.scatter(feature_df[col], feature_df['lifespan'], alpha=0.6, color='purple')
+    ax.set_title(title)
+    ax.set_xlabel('IG Follower Change (Absolute)')
+    ax.xaxis.set_major_formatter(FuncFormatter(millions))
+    ax.set_ylabel('Lifespan (weeks)')
+    ax.grid(True, linestyle='--', alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+#%%
+
+fig, axes = plt.subplots(2, 2, figsize=(14, 10), sharey=True)
+
+# column names and titles for each panel
+diff_cols = ['tt_likes_diff_1m',
+             'tt_likes_diff_3m',
+             'tt_likes_diff_6m',
+             'tt_likes_diff_12m']
+titles = ['Tiktok Likes Change (1-month Pre-Release)',
+          'Tiktok Likes Change (3-month Pre-Release)',
+          'Tiktok Likes Change (6-month Pre-Release)',
+          'Tiktok Likes Change (12-month Pre-Release)']
+
+# flatten axes array to 1D so we can loop
+axes = axes.ravel()
+
+for ax, col, title in zip(axes, diff_cols, titles):
+    ax.scatter(feature_df[col], feature_df['lifespan'], alpha=0.6, color='turquoise')
+    ax.set_title(title)
+    ax.set_xlabel('TT Likes Change (Absolute)')
+    ax.xaxis.set_major_formatter(FuncFormatter(millions))
+    ax.set_ylabel('Lifespan (weeks)')
+    ax.grid(True, linestyle='--', alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+#%%
+
+fig, axes = plt.subplots(2, 2, figsize=(14, 10), sharey=True)
+
+# column names and titles for each panel
+diff_cols = ['yt_views_diff_1m',
+             'yt_views_diff_3m',
+             'yt_views_diff_6m',
+             'yt_views_diff_12m']
+titles = ['Youtube Views Change (1-month Pre-Release)',
+          'Youtube Views Change (3-month Pre-Release)',
+          'Youtube Views Change (6-month Pre-Release)',
+          'Youtube Views Change (12-month Pre-Release)']
+
+# flatten axes array to 1D so we can loop
+axes = axes.ravel()
+
+for ax, col, title in zip(axes, diff_cols, titles):
+    ax.scatter(feature_df[col], feature_df['lifespan'], alpha=0.6, color='red')
+    ax.set_title(title)
+    ax.set_xlabel('YT Views Change (Absolute)')
+    ax.xaxis.set_major_formatter(FuncFormatter(millions))
+    ax.set_ylabel('Lifespan (weeks)')
+    ax.grid(True, linestyle='--', alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+#%%
+
+def billions(x, pos):
+    return f'{x/1e9:.1f}B'
+
+new_df = yt_pre12_clean[yt_pre12_clean['song_id'] == "Thinkin' Bout Me — Morgan Wallen"]
+
+fig, ax = plt.subplots(figsize=(10, 5))
+ax.plot(new_df['date'], new_df['views'])
+
+ax.set_xlabel('Date')
+ax.set_ylabel('Youtube Profile views (All-Time)')
+
+# format the Y-axis numbers into billions
+ax.yaxis.set_major_formatter(FuncFormatter(billions))
+plt.title('Morgan Wallen All-Time Youtube Views 12-Month Pre-Release')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+#%%
+
+feature_df[feature_df['yt_views_diff_1m'] == feature_df['yt_views_diff_1m'].min()]
+
+#%%
+
+# visualize each metric for every artist to see if there are consistent dips
+# in where you think there are socialblade outages
+
+# do same for daily diff plots (accross all artists)
+# Look into more hidden data quality issues eg. Alex Warren
+
+# notice, socialblade scrapes the value of likes from profile, which for larger numbers, is rounded off
 
 #%%
 
