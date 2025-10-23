@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import re
 import os
+import numpy as np
 
 
 def expand_to_full_window(
@@ -180,3 +181,68 @@ def plot_two_metrics_song(
             )
             plt.savefig(os.path.join(outdir, filename), dpi=dpi)
             plt.close(fig)
+
+def plot_ig_daily_change_all(
+    df,
+    song_col="song_id",
+    artist_col="artist",
+    date_col="date",
+    metric_col="ig_followers_diff_daily",
+    days_back=365,
+    outdir="graphs/ig_daily_pre12m",
+    dpi=150,
+    show=False,
+):
+    """
+    Plots the daily change in Instagram followers for all songs during the
+    12 months preceding their release date, saving one plot per song.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Must include columns: song_id, artist, date, release_date, ig_followers_diff_daily.
+    days_back : int
+        Days before release_date to include (default 365).
+    outdir : str
+        Output directory for saving figures.
+    """
+    os.makedirs(outdir, exist_ok=True)
+
+    d = df.copy()
+    d[date_col] = pd.to_datetime(d[date_col])
+    d["release_date"] = pd.to_datetime(d["release_date"])
+
+    for (artist, song), g in d.groupby([artist_col, song_col]):
+        rd = g["release_date"].iloc[0]
+        mask = (g[date_col] >= rd - pd.Timedelta(days=days_back)) & (g[date_col] <= rd)
+        g = g.loc[mask].sort_values(date_col)
+
+        if g.empty:
+            continue
+
+        # align x-axis as days before release
+        g["days_to_release"] = (g[date_col] - rd).dt.days
+
+        # filter extreme z-scores
+        z = (g[metric_col] - g[metric_col].mean()) / g[metric_col].std()
+        g.loc[z.abs() > 3, metric_col] = np.nan
+
+        plt.figure(figsize=(8, 4))
+        plt.plot(
+            g["days_to_release"],
+            g[metric_col],
+            label=f"{artist} — {song}",
+        )
+        plt.axvline(0, color="gray", linestyle="--", linewidth=1)
+        plt.title(f"Daily IG Follower Change — {artist} ({song})")
+        plt.xlabel("Days to Release")
+        plt.ylabel("Δ Instagram Followers")
+        plt.tight_layout()
+
+        if show:
+            plt.show()
+        else:
+            safe_artist = str(artist).replace("/", "_")
+            safe_song = str(song).replace("/", "_")
+            plt.savefig(f"{outdir}/{safe_artist}_{safe_song}_ig_daily.png", dpi=dpi)
+            plt.close()

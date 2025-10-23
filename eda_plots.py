@@ -533,7 +533,12 @@ plt.grid(True)
 plt.legend()
 plt.show()
 
-# %%
+#%%
+
+print([int(i) for i in pre_counts_ig])
+print([int(i) for i in pre_counts_tt])
+print([int(i) for i in pre_counts_yt])
+
 
 #%%
 

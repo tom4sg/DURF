@@ -1,5 +1,4 @@
 """
-
 I should do power analysis before train test split!
 
 Ok, we have to consider a few things in the feature engineering process:
@@ -80,6 +79,14 @@ feature_df = pd.DataFrame({
     "entry_week_date": solo_songs["chart_week"],
     "entry_week_pos": solo_songs["current_week"],
 })
+
+# feature_df = pd.DataFrame({
+#     "song_id": sampled_solo_songs["song_id"],
+#     "title": sampled_solo_songs["title"],
+#     "artist": sampled_solo_songs["main_artist"],
+#     "entry_week_date": sampled_solo_songs["chart_week"],
+#     "entry_week_pos": sampled_solo_songs["current_week"],
+# })
 
 #%%
 
@@ -793,27 +800,80 @@ feature_df
 
 #%%
 
-artist_id = 'Eternity — Alex Warren'  # replace with the actual ID
+feature_df.to_csv('data/processed_data/feature_df_no_duplicate_artists.csv')
 
-artist_df = (
-    tt_pre12_clean
-    .loc[tt_pre12_clean['song_id'] == artist_id]
-    .sort_values('date')  # make sure it's sorted chronologically
+#%%
+
+# Make a working copy
+df = tt_pre12_clean.copy()
+df['date'] = pd.to_datetime(df['date'])
+
+
+df['days_since_start'] = (
+    df.groupby('song_id')['date']
+      .transform(lambda d: (d - d.min()).dt.days)
 )
 
-plt.figure(figsize=(10,5))
-plt.plot(
-    artist_df['date'],
-    artist_df['tt_likes_diff_daily'],
-    linestyle='-'
-)
-plt.axhline(0, color='gray', linewidth=1, linestyle='--')  # reference line at 0
-plt.title(f"Daily Tiktok Likes Change ({artist_id})")
-plt.xlabel('Date')
+# Z-score filter within each song_id
+grouped = df.groupby('song_id')['tt_likes_diff_daily']
+z = grouped.transform(lambda x: (x - x.mean()) / x.std())
+
+# Drop / mask outliers
+df.loc[z.abs() > 3, 'tt_likes_diff_daily'] = np.nan
+
+# Plot from the filtered df
+plt.figure(figsize=(12, 6))
+for song_id, group in df.groupby('song_id'):
+    if song_id != 'Eternity — Alex Warren':  # skip if you want
+        group = group.sort_values('days_since_start')
+        plt.plot(
+            group['days_since_start'],
+            group['tt_likes_diff_daily'],
+            alpha=0.5
+        )
+
+plt.axhline(0, color='gray', linewidth=1, linestyle='--')
+plt.title("Daily TikTok Likes Change")
+plt.xlabel('Days since first observation')
 plt.ylabel('Daily Like Change')
-plt.xticks(rotation=45)
 plt.tight_layout()
-plt.legend()
+plt.show()
+
+#%%
+
+# Make a working copy
+df = ig_pre12_clean.copy()
+df['date'] = pd.to_datetime(df['date'])
+
+# Align all artists
+df['days_since_start'] = (
+    df.groupby('song_id')['date']
+      .transform(lambda d: (d - d.min()).dt.days)
+)
+
+# Z-score filter within each song_id
+grouped = df.groupby('song_id')['ig_followers_diff_daily']
+z = grouped.transform(lambda x: (x - x.mean()) / x.std())
+
+# Drop / mask outliers
+df.loc[z.abs() > 3, 'ig_followers_diff_daily'] = np.nan
+
+# Plot from the filtered df
+plt.figure(figsize=(12, 6))
+for song_id, group in df.groupby('song_id'):
+    if song_id != 'Eternity — Alex Warren':  # skip if you want
+        group = group.sort_values('days_since_start')
+        plt.plot(
+            group['days_since_start'],
+            group['ig_followers_diff_daily'],
+            alpha=0.5
+        )
+
+plt.axhline(0, color='gray', linewidth=1, linestyle='--')
+plt.title("Daily Instagram Followers Change")
+plt.xlabel('Days since first observation')
+plt.ylabel('Daily Follower Change')
+plt.tight_layout()
 plt.show()
 
 #%%
@@ -910,24 +970,22 @@ plt.show()
 def billions(x, pos):
     return f'{x/1e9:.1f}B'
 
-new_df = yt_pre12_clean[yt_pre12_clean['song_id'] == "Thinkin' Bout Me — Morgan Wallen"]
+new_df = ig_pre12_clean[ig_pre12_clean['song_id'] == "Don't We — Morgan Wallen"]
 
 fig, ax = plt.subplots(figsize=(10, 5))
-ax.plot(new_df['date'], new_df['views'])
+ax.plot(new_df['date'], new_df['followers'])
 
 ax.set_xlabel('Date')
-ax.set_ylabel('Youtube Profile views (All-Time)')
-
-# format the Y-axis numbers into billions
+ax.set_ylabel('Instagram Followers (All-Time)')
 ax.yaxis.set_major_formatter(FuncFormatter(billions))
-plt.title('Morgan Wallen All-Time Youtube Views 12-Month Pre-Release')
+plt.title('Morgan Wallen Instagram Followers 12-Months prior (Thought You Should Know)')
 plt.xticks(rotation=45)
 plt.tight_layout()
 plt.show()
 
 #%%
 
-feature_df[feature_df['yt_views_diff_1m'] == feature_df['yt_views_diff_1m'].min()]
+ig_pre12_clean[ig_pre12_clean['artist'] == 'Morgan Wallen']['song_id'].unique()
 
 #%%
 
@@ -1149,3 +1207,66 @@ plt.ylabel("Frequency")
 plt.title("Distribution of YouTube Views 4-Week Growth Rate")
 plt.tight_layout()
 plt.show()
+
+#%%
+
+from utils import plot_ig_daily_change_all
+import numpy as np
+
+plot_ig_daily_change_all(ig_pre12_clean)
+
+# %%
+
+df = ig_pre12_clean[ig_pre12_clean['song_id'] == "Burgundy — $uicideboy$"]
+mask = (~ig_pre12_clean.groupby('song_id')['ig_followers_diff_daily'].all())
+df = ig_pre12_clean.groupby('song_id')['ig_followers_diff_daily'][mask]
+df
+
+# %%
+ig_pre12_clean.to_csv('data/processed_data/ig_clean.csv', index=False)
+# %%
+
+mask = ig_pre12_clean['date'] != ig_pre12_clean['release_date']
+ig_pre12_clean.loc[mask, 'ig_followers_diff_daily'].notnull().value_counts()
+# %%
+ig_pre12_clean[mask]
+
+#%%
+
+ig_pre12_clean.sort_values(["song_id", "platform", "date"], ascending=False)
+
+# %%
+
+ig_pre12_clean['ig_followers_diff_daily'].isna().value_counts()
+# %%
+
+mask = ig_pre12_clean['date'] != ig_pre12_clean['release_date'] - pd.Timedelta(days=365)
+ig_pre12_clean.loc[mask, 'ig_followers_diff_daily'].isna().value_counts()
+
+# %%
+
+new_df = ig_pre12_clean[ig_pre12_clean['song_id'] == "Vegas — Doja Cat"]
+plt.plot(new_df['date'], new_df['ig_followers_diff_daily'])
+plt.show()
+
+#%%
+
+feature = pd.read_csv('data/processed_data/feature_df.csv')
+
+#%%
+
+feature['lifespan']
+
+#%%
+
+bins = [0, 2, 8, 16, 32, 64, feature['lifespan'].max()]
+labels = ["1–2", "3–8", "9–16", "17–32", "33–64", "65+"]
+
+feature['lifespan_bin'] = pd.cut(feature['lifespan'], bins=bins, labels=labels, include_lowest=True, right=True)
+
+#%%
+feature['lifespan_bin']
+#%%
+
+feature.to_csv('data/processed_data/feature_df_with_labels.csv', index=False)
+# %%
