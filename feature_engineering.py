@@ -1,502 +1,4 @@
 """
-I should do power analysis before train test split!
-
-Ok, we have to consider a few things in the feature engineering process:
-
-Some of our unique artists have several songs, we need to randomly select one per artist
-
-We only want to use data prior to, or on a particular song's release date. 
-
-We must remember that there are one-off null values in Social Data, which we need to account for (Maybe Imputation?).
-
-We want to create features inspired by the following:
-
-- Artist Follower Count (On Release Date)
-- Compound Weekly Growth Rate of Artist Followers (the 4 weeks prior to release)
-- Relevancy-to-Release Score - How relevant is the content of their posting to the release? (via NLP on comments, captions, hashtags)
-
-- post rate
-- cwgr
-
-Potential:
-- Primary Genre Tag (To account for the imbalance of solo releases)
-- First week position on Hot 100
-- Song Duration
-
-Feature Scaling:
-It might be advantageous to log transform for CWGR.
-Maybe Min Max normalize or z-score. 
-
-Here are features we can add from the emerging_songs dataframe:
-- song_id
-- title
-- artist
-- release_date
-- entry_week_date
-- entry_week_pos
-- peak_pos
-- lifespan
-"""
-
-#%%
-
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-import seaborn as sns
-import ast
-from utils import expand_to_full_window, plot_two_metrics_song, plot_two_metrics_artist
-
-#%%
-
-emerging_songs = pd.read_csv("data/processed_data/emerging_songs.csv")
-solo_songs = emerging_songs[emerging_songs["main_artist"] == emerging_songs["performers"]].copy()
-solo_songs = solo_songs.drop_duplicates(subset="song_id")
-solo_songs["song_id"].nunique()
-solo_songs.groupby('main_artist')['song_id'].count().median()
-
-#%%
-
-# sampled_solo_songs = (solo_songs
-#            .groupby("main_artist", group_keys=False)
-#            .apply(lambda g: g.sample(1, random_state=42))
-#            .reset_index(drop=True))
-
-song_peaks = (emerging_songs
-           .groupby("song_id", as_index=False)["current_week"]
-           .min()
-           .rename(columns={"current_week": "peak_pos"}))
-
-lifespans = (emerging_songs
-           .groupby("song_id", as_index=False)["wks_on_chart"]
-           .max()
-           .rename(columns={"wks_on_chart": "lifespan"}))
-
-feature_df = pd.DataFrame({
-    "song_id": solo_songs["song_id"],
-    "title": solo_songs["title"],
-    "artist": solo_songs["main_artist"],
-    "entry_week_date": solo_songs["chart_week"],
-    "entry_week_pos": solo_songs["current_week"],
-})
-
-# feature_df = pd.DataFrame({
-#     "song_id": sampled_solo_songs["song_id"],
-#     "title": sampled_solo_songs["title"],
-#     "artist": sampled_solo_songs["main_artist"],
-#     "entry_week_date": sampled_solo_songs["chart_week"],
-#     "entry_week_pos": sampled_solo_songs["current_week"],
-# })
-
-#%%
-
-print(feature_df['artist'].nunique())
-print(feature_df['song_id'].nunique())
-
-#%%
-
-metadata = pd.read_csv("data/processed_data/metadata.csv")
-metadata["genreNames"] = metadata["genreNames"].apply(lambda x: ast.literal_eval(x) if pd.notnull(x) else [])
-metadata.drop(columns=["Unnamed: 0"], inplace=True)
-
-feature_df = feature_df.merge(
-    metadata[["song_id", "releaseDate", "genreNames", "durationInMillis"]]
-      .rename(columns={"releaseDate": "release_date", "genreNames": "genres", "durationInMillis": "song_length"}),
-    on="song_id",
-    how="left"
-)
-
-# remove the string "Music" genres column
-feature_df["genres"] = feature_df["genres"].apply(
-    lambda g: [x for x in g if x != "Music"]
-)
-
-feature_df["song_length"] = feature_df["song_length"] / 60000
-
-feature_df = feature_df.merge(song_peaks, on="song_id", how="left")
-feature_df = feature_df.merge(lifespans, on="song_id", how="left")
-
-# Let's reorder the columns to what I described in the comment
-
-cols = ["song_id", "title", "artist", "genres",
-        "song_length", "release_date", "entry_week_date", 
-        "entry_week_pos", "peak_pos", "lifespan"] 
-feature_df = feature_df[cols]
-feature_df
-
-#%%
-
-"""
-Ok, now, we do / compute the following before the train test split:
-
-1. Impute time-series for YouTube Views with pandas linear interpolation
-2. Growth Rate features
-  - Compute weekly growth rate for Followers / Subscribers (4 weeks prior release)
-  - Compute weekly growth rate for Likes / Views (4 weeks prior release)
-3. Release Date features
-  - Parse total Followers / Subscribers (On release date)
-  - Parse total Likes / Views (On release date)
-4. Posting Features
-  - Compute average daily posts by Artist (4 weeks prior release)
-"""
-
-#%%
-
-instagram = pd.read_csv("data/raw_data/social_archives/instagram_archive.csv")
-instagram["date"] = pd.to_datetime(instagram["date"])
-instagram.drop(columns=["Unnamed: 0"], inplace=True)
-
-tiktok = pd.read_csv("data/raw_data/social_archives/tiktok_archive.csv")
-tiktok["date"] = pd.to_datetime(tiktok["date"])
-tiktok.drop(columns=["Unnamed: 0"], inplace=True)
-
-youtube = pd.read_csv("data/raw_data/social_archives/youtube_archive.csv")
-youtube["date"] = pd.to_datetime(youtube["date"])
-youtube.drop(columns=["Unnamed: 0"], inplace=True)
-
-#%%
-
-"""
-Let's plot a null heatmap to see where artists are missing data in each social
-platform. 
-
-for Youtube, it seems to be specifically when SocialBlade API changed their API.
-"""
-
-#%%
-
-youtube = youtube.merge(
-    feature_df[["artist", "song_id", "release_date"]],
-    left_on="artist_id",
-    right_on="artist",
-    how="left"
-)
-
-youtube["date"] = pd.to_datetime(youtube["date"])
-youtube["release_date"] = pd.to_datetime(youtube["release_date"])
-
-mask = (
-    (youtube["date"] >= youtube["release_date"] - pd.Timedelta(days=365)) &
-    (youtube["date"] <= youtube["release_date"])
-)
-
-yt_pre12_df = (
-    youtube.loc[mask, ["artist","song_id","platform","date","release_date","subs","views"]]
-    .sort_values(["artist","song_id","date"])
-    .reset_index(drop=True)
-)
-
-yt_pre12_clean = expand_to_full_window(yt_pre12_df, ("artist","song_id","platform"), "date", "release_date", 365)
-
-#%%
-"""
-Let's plot ALL Artist youtube data prior to release.
-"""
-plot_two_metrics_song(
-    yt_pre12_clean,
-    metric1="subs",
-    metric2="views",
-    outdir="graphs/yt_12_month_raw",
-    filename_pattern="yt_{song}_{platform}.png"
-)
-
-#%%
-
-df = yt_pre12_clean.sort_values(["song_id", "platform", "date"]).copy()
-grp = ["song_id", "platform"]
-
-# 1) Mark zeros that are almost surely "missing" (group has some positive values)
-views_has_pos = df.groupby(grp)["views"].transform("max") > 0
-subs_has_pos  = df.groupby(grp)["subs"].transform("max")  > 0
-
-zero_views_missing = (df["views"] == 0) & views_has_pos
-zero_subs_missing  = (df["subs"]  == 0) & subs_has_pos
-
-df["views_zero_proxy_missing"] = zero_views_missing
-df["subs_zero_proxy_missing"]  = zero_subs_missing
-
-#%%
-
-target = df[df["views_zero_proxy_missing"] == True]['artist'].unique()
-
-#%%
-
-"""
-array(['sombr', 'Jessie Murph', 'Morgan Wallen', 'Justin Bieber',
-       'Megan Moroney', 'Max McNown', 'Luke Combs', 'Lil Wayne',
-       'Mariah the Scientist', '$uicideboy$', 'Sleep Token',
-       'Tyler, The Creator', 'Travis Scott', 'Miley Cyrus', 'Alex Warren',
-       'Don Toliver', 'Addison Rae', 'Kehlani', 'Dareyes de La Sierra',
-       'KATSEYE', 'Eric Church', 'Chris Brown', 'Lady Gaga', 'ATEEZ',
-       'BLACKPINK', 'Tate McRae', 'Gunna', 'Karol G', 'Paul Russell',
-       'ILLIT', 'Sabrina Carpenter', 'Fuerza Regida', 'Ivan Cornejo',
-       'Benson Boone', 'Chuckyy', 'Lil Tecca', 'JT', 'Ed Sheeran',
-       'Cardi B', 'YG Marley', 'Zach Bryan', 'Latto', 'Lainey Wilson',
-       'Chappell Roan', 'Gelo', 'GloRilla', 'Mariah Carey',
-       'BabyChiefDoit', 'Drake', 'Lorde', 'Fridayy'], dtype=object)
-
-It's important to note, SocialBlade API went down for a few days in April 2025. 
-
-Those above with (Impute) are because of this, YG Marley's page was at 0 views 
-4 weeks before release. 
-"""
-
-#%%
-
-df[df["subs_zero_proxy_missing"] == True]['artist'].unique()
-# None
-
-#%%
-"""
-Ok, let's turn the 0.0 values to NaNs and then impute them with linear interpolation.
-"""
-
-#%%
-
-df.loc[zero_views_missing, "views"] = np.nan
-
-grp_interp = ["song_id", "platform"]
-df["views"] = df.groupby(grp_interp)["views"].transform(lambda s: s.interpolate())
-df["subs"]  = df.groupby(grp_interp)["subs"].transform(lambda s: s.interpolate())
-
-yt_pre12_clean = df
-
-#%%
-
-plot_two_metrics_song(yt_pre12_clean, metric1="subs", metric2="views",
-                artists=target,
-                 outdir="graphs/yt_12_month_imputed",
-                 filename_pattern="yt_{song}_{platform}.png")
-
-#%%
-"""
-
-Interpolation looks good based on the graphs,
-one thing to note though:
-Drake
-Morgan Wallen
-Benson Boone
-
-were all victim to what seems like a data quality issue on SocialBlade's part
-
-Rather than the 0.0 filling for missed values, in 2023 march - may, 
-
-there are consistent dips among the three of their views, basically carved out in th same spots
-
-I anticipate these are things we should interpolate as this must be a scraping error on socialblades behalf
-"""
-#%%
-
-df["song_id"].nunique()
-
-#%%
-"""
-Ok, Let's check for IG. 
-"""
-#%%
-
-instagram = instagram.merge(
-    feature_df[["artist", "song_id", "release_date"]],
-    left_on="artist_id",
-    right_on="artist",
-    how="left"
-)
-
-instagram["date"] = pd.to_datetime(instagram["date"])
-instagram["release_date"] = pd.to_datetime(instagram["release_date"])
-
-mask = (
-    (instagram["date"] >= instagram["release_date"] - pd.Timedelta(days=365)) &
-    (instagram["date"] <= instagram["release_date"])
-)
-
-ig_pre12_df = (
-    instagram.loc[mask, ["artist","song_id","platform","date","release_date","followers","following", "media"]].copy()
-    .sort_values(["artist","song_id","date"])
-    .reset_index(drop=True)
-)
-
-ig_pre12_clean = expand_to_full_window(ig_pre12_df, ("artist","song_id","platform"), "date", "release_date", 365)
-
-#%%
-"""
-Let's plot ALL Artist Instagram data prior to release.
-"""
-plot_two_metrics_song(
-    ig_pre12_clean,
-    metric1="followers",
-    metric2="media",
-    outdir="graphs/ig_12_month_raw",
-    filename_pattern="ig_{song}_{platform}.png"
-)
-
-#%%
-
-df = ig_pre12_clean.sort_values(["song_id", "platform", "date"]).copy()
-grp = ["song_id", "platform"]
-
-# 1) Mark zeros that are almost surely "missing" (group has some positive values)
-followers_has_pos = df.groupby(grp)["followers"].transform("max") > 0
-media_has_pos  = df.groupby(grp)["media"].transform("max")  > 0
-
-zero_followers_missing = (df["followers"] == 0) & followers_has_pos
-zero_media_missing  = (df["media"]  == 0) & media_has_pos
-
-df["followers_zero_proxy_missing"] = zero_followers_missing
-df["media_zero_proxy_missing"]  = zero_media_missing
-
-#%%
-
-df[df["followers_zero_proxy_missing"] == True]['artist'].unique()
-"""
-array(['Lil Durk', 'Polo G', 'Moneybagg Yo', 'j-hope'
-"""
-
-#%%
-
-"""
-There are instances after using expand to full window where we need to beware of NaNs
-and impute those, rather than just 0s
-
-Let's impute, but skip the protocol of making 0s NaNs
-"""
-
-#%%
-df.loc[zero_followers_missing, "followers"] = np.nan
-
-grp_interp = ["song_id", "platform"]
-df["followers"] = df.groupby(grp_interp)["followers"].transform(lambda s: s.interpolate())
-
-ig_pre12_clean = df
-
-#%%
-
-plot_two_metrics_song(
-    ig_pre12_clean,
-    metric1="followers",
-    metric2="media",
-    outdir="graphs/ig_12_month_imputed",
-    filename_pattern="ig_{song}_{platform}.png"
-)
-
-#%%
-"""
-Same for Instagram. Let's check for TikTok.
-"""
-#%%
-
-tiktok = tiktok.merge(
-    feature_df[["artist", "song_id", "release_date"]],
-    left_on="artist_id",
-    right_on="artist",
-    how="left"
-)
-
-tiktok["date"] = pd.to_datetime(tiktok["date"])
-tiktok["release_date"] = pd.to_datetime(tiktok["release_date"])
-
-mask = (
-    (tiktok["date"] >= tiktok["release_date"] - pd.Timedelta(days=365)) &
-    (tiktok["date"] <= tiktok["release_date"])
-)
-
-tt_pre12_df = (
-    tiktok.loc[mask, ["artist","song_id","platform","date","release_date","followers","following","uploads","likes"]].copy()
-    .sort_values(["artist","song_id","date"])
-    .reset_index(drop=True)
-)
-
-tt_pre12_clean = expand_to_full_window(tt_pre12_df, ("artist","song_id","platform"), "date", "release_date", 365)
-
-#%%
-
-plot_two_metrics_song(
-    tt_pre12_clean,
-    metric1="followers",
-    metric2="likes",
-    outdir="graphs/tt_12_month_raw",
-    filename_pattern="tt_{song}_{platform}.png"
-)
-
-#%%
-
-df = tt_pre12_clean.sort_values(["song_id", "platform", "date"]).copy()
-grp = ["song_id", "platform"]
-
-# 1) Mark zeros that are almost surely "missing" (group has some positive values)
-followers_has_pos = df.groupby(grp)["followers"].transform("max") > 0
-uploads_has_pos  = df.groupby(grp)["uploads"].transform("max")  > 0
-likes_has_pos  = df.groupby(grp)["likes"].transform("max")  > 0
-
-zero_followers_missing = (df["followers"] == 0) & followers_has_pos
-zero_media_missing  = (df["uploads"]  == 0) & uploads_has_pos
-zero_likes_missing  = (df["likes"]  == 0) & likes_has_pos
-
-df["followers_zero_proxy_missing"] = zero_followers_missing
-df["uploads_zero_proxy_missing"]  = zero_media_missing
-df["likes_zero_proxy_missing"]  = zero_likes_missing
-
-#%%
-
-df[df["followers_zero_proxy_missing"] == True]['artist'].unique()
-"""
-array(['Sabrina Carpenter', 'Lizzo', 'Tate McRae', 'Megan Moroney',
-       'Lil Yachty', 'Lady Gaga', 'Doja Cat', 'Luke Combs', '21 Savage',
-       'Olivia Rodrigo', 'Beyonce', 'Rod Wave', 'The Kid LAROI',
-       'Bad Bunny', 'Gunna', 'Benson Boone', 'Lil Wayne', 'Latto',
-       'Megan Thee Stallion', 'Billie Eilish', 'Dove Cameron',
-       'Kane Brown', 'Lil Uzi Vert', 'Stray Kids', 'Jack Harlow',
-       'Luke Bryan', 'LE SSERAFIM', 'Meghan Trainor', 'David Kushner',
-       'Rauw Alejandro', 'Ice Spice', 'Doechii', 'Lil Baby',
-       'Travis Scott', 'Hozier', 'Cardi B', 'Alex Warren', 'Don Toliver',
-       'd4vd', 'Lewis Capaldi', 'NLE Choppa', 'Young Thug',
-       'Russell Dickerson', 'Dua Lipa', 'ATEEZ', 'Lauren Spencer-Smith',
-       'Teddy Swims', 'Selena Gomez', 'Muni Long', 'Leon Thomas', 'Russ',
-       'Tinashe', 'Fuerza Regida', 'Labrinth', 'The Marias', 'Tyla',
-       'Chris Brown', 'BTS', 'Laufey', 'Karol G', 'Tim McGraw', 'TWICE',
-       'Kenny Chesney', 'Chloe', 'Giveon', 'Lil Durk', 'Jonas Brothers',
-       'Tucker Wetmore', 'Noah Kahan', 'Forrest Frank'], dtype=object)
-"""
-#%%
-
-df[df["likes_zero_proxy_missing"] == True]['artist'].unique()
-"""
-array(['Morgan Wallen', 'Lady Gaga', 'Doja Cat', 'Beyonce',
-       'Chris Janson', 'Karol G', 'Bad Bunny', 'sombr', 'Don Toliver',
-       'Jordan Davis', 'Kane Brown', 'Luke Bryan', 'Juice WRLD',
-       'Sabrina Carpenter', 'Russell Dickerson', 'Megan Thee Stallion',
-       'Cynthia Erivo', 'Lil Nas X', 'Stray Kids', 'Paul Russell',
-       'Chase Matthew', 'Jack Harlow', 'Muni Long', 'TWICE', 'Russ',
-       'P!nk', 'Megan Moroney', 'Blink-182', 'Jack Black', 'Corey Kent',
-       'Sia', 'Jonas Brothers'], dtype=object)
-"""
-
-#%%
-# Impute Tiktok Followers for these artists
-
-df.loc[zero_followers_missing, "followers"] = np.nan
-df.loc[zero_likes_missing, "likes"] = np.nan
-
-grp_interp = ["song_id", "platform"]
-df["followers"] = df.groupby(grp_interp)["followers"].transform(lambda s: s.interpolate())
-df["likes"]  = df.groupby(grp_interp)["likes"].transform(lambda s: s.interpolate())
-
-tt_pre12_clean = df
-
-#%%
-
-plot_two_metrics_song(
-    tt_pre12_clean,
-    metric1="followers",
-    metric2="likes",
-    outdir="graphs/tt_12_month_imputed",
-    filename_pattern="tt_{song}_{platform}.png"
-)
-
-# %%
-"""
-Ok, we've linearly interpolated missing time-series data for artists!
-
 Now we can begin calculating features around social data...
 
 Release Date features:
@@ -510,6 +12,8 @@ Growth Rate features:
 - Compute weekly growth rate for Followers / Subscribers (4 weeks prior release)
 - Compute weekly growth rate for Likes / Views (4 weeks prior release)
 """
+
+songs['lifespan'].mean(), songs['lifespan'].var()
 
 #%%
 # We can start by making a new column in each of our pre4_df's for release date values
@@ -800,7 +304,7 @@ feature_df
 
 #%%
 
-feature_df.to_csv('data/processed_data/feature_df_no_duplicate_artists.csv')
+feature_df.to_csv('data/processed_data/feature_df.csv')
 
 #%%
 
@@ -1250,23 +754,260 @@ plt.plot(new_df['date'], new_df['ig_followers_diff_daily'])
 plt.show()
 
 #%%
-
+import pandas as pd
 feature = pd.read_csv('data/processed_data/feature_df.csv')
 
+
 #%%
+
+# pd.qcut(
+#     feature['lifespan'].rank(method='first'),
+#     q=4,
+#     labels=[1, 2, 3, 4]
+# ).value_counts()
 
 feature['lifespan']
 
 #%%
 
-bins = [0, 2, 8, 16, 32, 64, feature['lifespan'].max()]
-labels = ["1–2", "3–8", "9–16", "17–32", "33–64", "65+"]
+feature['lifespan'].var() > feature['lifespan'].mean()
 
-feature['lifespan_bin'] = pd.cut(feature['lifespan'], bins=bins, labels=labels, include_lowest=True, right=True)
-
-#%%
-feature['lifespan_bin']
 #%%
 
 feature.to_csv('data/processed_data/feature_df_with_labels.csv', index=False)
+
+#%%
+
+
+from scipy.signal import detrend
+import numpy as np
+
+ig = pd.read_csv('data/processed_data/ig_clean.csv')
+
+song_id = "Get It Sexyy — Sexyy Red"
+
+followers = ig[ig['song_id'] == song_id].copy()
+followers['date'] = pd.to_datetime(followers['date'])
+followers = followers.dropna(subset=['ig_followers_diff_daily'])
+
+followers['follow_detrend'] = detrend(followers['ig_followers_diff_daily'], type='linear')
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+
+# Raw and detrended time series
+axes[0].plot(followers['date'], followers['ig_followers_diff_daily'], c='blue', label='Raw')
+axes[0].plot(followers['date'], followers['follow_detrend'], c='red', label='Linear Detrended')
+axes[0].set_title('Input Signal (IG Followers)')
+axes[0].set_xlabel('Date')
+axes[0].set_ylabel('Δ Followers')
+axes[0].grid(True, alpha=0.3)
+axes[0].legend()
+
+fft_vals = np.fft.rfft(followers['follow_detrend'])
+fft_freqs = np.fft.rfftfreq(len(followers), d=1)  # d=1 assumes daily samples
+
+# Identify dominant frequency
+max_idx = np.argmax(np.abs(fft_vals))
+max_freq = fft_freqs[max_idx]
+
+# Plot FFT magnitude
+axes[1].plot(fft_freqs, np.abs(fft_vals), color='purple')
+axes[1].axvline(max_freq, color='gray', linestyle='--', linewidth=1)
+axes[1].set_title(f'Fourier Transform Magnitude (peak={max_freq:.4f})')
+axes[1].set_xlabel('Frequency (1/day)')
+axes[1].set_ylabel('|Amplitude|')
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+#%%
+
+ig[ig['song_id'] == 'Water — Tyla']
+#%%
+
+fft_freqs
 # %%
+
+print("Daily analysis:")
+print(f"  Peak frequency: {max_freq:.4f} cycles/day")
+print(f"  Peak period: {1/max_freq:.1f} days")
+
+print("\nWeekly analysis:")
+print(f"  Peak frequency: {max_freq:.4f} cycles/week")  
+print(f"  Peak period: {1/max_freq:.1f} weeks")
+# %%
+
+"""
+Notice, .0027 means the cycle is the entire year
+
+This basically mean no cyclical trend was identified for this year, the whole year is a cycle
+"""
+
+
+#%%
+
+import pandas as pd
+import numpy as np
+from scipy.signal import detrend
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+ig = pd.read_csv('data/processed_data/ig_clean.csv')
+ig['date'] = pd.to_datetime(ig['date'])
+
+results = []
+
+for song_id, group in ig.groupby('song_id'):
+    g = group.dropna(subset=['ig_followers_diff_daily']).copy()
+    if len(g) < 4:
+        continue  # skip short or empty series
+
+    detrended = detrend(g['ig_followers_diff_daily'].values, type='linear')
+    fft_vals = np.fft.rfft(detrended)
+    fft_freqs = np.fft.rfftfreq(len(detrended), d=1)
+
+    # ignore zero frequency (DC component)
+    if len(fft_vals) > 1:
+        fft_vals[0] = 0  
+
+    max_idx = np.argmax(np.abs(fft_vals))
+    max_freq = fft_freqs[max_idx]
+
+    results.append({'song_id': song_id, 'dominant_freq': max_freq})
+
+fft_df = pd.DataFrame(results)
+
+#%%
+
+feature = pd.read_csv('data/processed_data/feature_df.csv')
+merged = feature.merge(fft_df, on='song_id', how='left')
+
+# Scatter plot
+plt.figure(figsize=(7,5))
+plt.scatter(merged['dominant_freq'], merged['lifespan'], alpha=0.6)
+plt.xlabel('Dominant Frequency (cycles/day)')
+plt.ylabel('Lifespan (weeks on Hot 100)')
+plt.title('Song Lifespan vs. Instagram Follower Frequency')
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+# %%
+
+max_row = merged.loc[merged['dominant_freq'].idxmax()]
+
+print("Song with highest dominant frequency:")
+print(f"  Song ID: {max_row['song_id']}")
+print(f"  Dominant Frequency: {max_row['dominant_freq']:.6f} cycles/day")
+print(f"  Lifespan: {max_row['lifespan']} weeks")
+
+# %%
+
+
+# Identify song with max frequency
+max_row = merged.loc[merged['dominant_freq'].idxmax()]
+song_id_max = max_row['song_id']
+print(f"Plotting for: {song_id_max}")
+
+# Extract that artist's IG data
+song_data = ig[ig['song_id'] == song_id_max].copy()
+song_data = song_data.dropna(subset=['ig_followers_diff_daily'])
+song_data['date'] = pd.to_datetime(song_data['date'])
+
+# Plot
+plt.figure(figsize=(10,4))
+plt.plot(song_data['date'], song_data['ig_followers_diff_daily'], c='blue')
+plt.title(f'IG Daily Follower Change — {song_id_max}')
+plt.xlabel('Date')
+plt.ylabel('Δ Followers')
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+#%%
+
+plt.figure(figsize=(7,4))
+plt.hist(merged['dominant_freq'].dropna(), bins=40, color='purple', alpha=0.7)
+plt.xlabel('Dominant Frequency (cycles/day)')
+plt.ylabel('Count')
+plt.title('Distribution of Dominant IG Follower Frequencies')
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+# %%
+
+# Frequency diagnostics
+delta_f = fft_freqs[1] - fft_freqs[0]          # frequency step
+nyquist_f = fft_freqs[-1]                      # highest resolvable frequency
+max_idx = np.argmax(np.abs(fft_vals))          # index of strongest component
+peak_f = fft_freqs[max_idx]                    # dominant frequency
+period_days = 1 / peak_f if peak_f > 0 else np.inf
+
+print(f"Δf (frequency step): {delta_f:.6f} cycles/day")
+print(f"Nyquist frequency:   {nyquist_f:.6f} cycles/day")
+print(f"Peak frequency:      {peak_f:.6f} cycles/day (~{period_days:.1f} days period)")
+
+#%%
+
+bins = [0, 3, 10, 20, feature['lifespan'].max() + 1]
+labels = ['Very Short (1-3)', 'Short (4-10)', 'Medium (11-20)', 'Long (21+)']
+
+lifespan_bins = feature['lifespan_bin'] = pd.cut(feature['lifespan'], 
+                                  bins=bins, 
+                                  labels=labels,
+                                  include_lowest=True)
+
+lifespan_bins.value_counts()
+
+#%%
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Set style
+sns.set_style("whitegrid")
+plt.figure(figsize=(12, 10))
+
+# 1. Bar plot of bin counts
+plt.subplot(2, 2, 1)
+counts = lifespan_bins.value_counts().sort_index()
+colors = ['#e74c3c', '#f39c12', '#3498db', '#2ecc71']
+counts.plot(kind='bar', color=colors, edgecolor='black')
+plt.title('Distribution of Songs Across Lifespan Bins', fontsize=14, fontweight='bold')
+plt.xlabel('Lifespan Category', fontsize=11)
+plt.ylabel('Number of Songs', fontsize=11)
+plt.xticks(rotation=45, ha='right')
+# Add counts on top of bars
+for i, v in enumerate(counts):
+    plt.text(i, v + 20, str(v), ha='center', fontweight='bold')
+
+# 2. Pie chart with percentages
+plt.subplot(2, 2, 2)
+percentages = lifespan_bins.value_counts(normalize=True).sort_index() * 100
+plt.pie(percentages, labels=labels, autopct='%1.1f%%', colors=colors, 
+        startangle=90, textprops={'fontsize': 10, 'fontweight': 'bold'})
+plt.title('Percentage Distribution', fontsize=14, fontweight='bold')
+
+# 3. Histogram of raw lifespan with bin boundaries
+plt.subplot(2, 2, 3)
+plt.hist(feature['lifespan'], bins=50, color='skyblue', edgecolor='black', alpha=0.7)
+# Add vertical lines for bin boundaries
+for boundary, color in zip([3, 10, 20], ['red', 'orange', 'green']):
+    plt.axvline(boundary, color=color, linestyle='--', linewidth=2, 
+                label=f'{boundary} weeks')
+plt.xlabel('Lifespan (weeks)', fontsize=11)
+plt.ylabel('Frequency', fontsize=11)
+plt.title('Raw Lifespan Distribution with Bin Boundaries', fontsize=14, fontweight='bold')
+plt.legend()
+
+# 4. Box plot by bin
+plt.subplot(2, 2, 4)
+feature.boxplot(column='lifespan', by='lifespan_bin', ax=plt.gca())
+plt.suptitle('')  # Remove default title
+plt.title('Lifespan Distribution Within Each Bin', fontsize=14, fontweight='bold')
+plt.xlabel('Bin Category', fontsize=11)
+plt.ylabel('Lifespan (weeks)', fontsize=11)
+plt.xticks(rotation=45, ha='right')
+
+plt.tight_layout()
+plt.show()

@@ -646,3 +646,26 @@ print([int(i) for i in pre_counts_yt])
 # # ax.xaxis.set_major_formatter(FuncFormatter(millions))
 # # plt.tight_layout()
 # # plt.show()
+
+#%%
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+feature_df = pd.read_csv('data/processed_data/feature_df.csv')
+
+#%%
+
+counts = feature_df["lifespan_bin"].value_counts()
+
+order = ['1–2', '3–8', '9–16','17–32', '33–64', '65+']
+
+plt.figure(figsize=(12,6))
+counts.loc[order].plot(kind='bar')
+plt.title("lifespan bins")
+plt.xlabel("Weeks on Hot 100")
+plt.ylabel("Song Count")
+plt.show()
+
+# %%

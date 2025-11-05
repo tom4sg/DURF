@@ -82,7 +82,8 @@ for year in years:
         
     print(f"Added {file_count} files to hot_100 from {year}")
 
-total_hot_100.to_csv("data/processed_data/total_hot_100.csv", index=False)
+# total_hot_100.to_csv("data/processed_data/total_hot_100.csv", index=False)
+
 total_hot_100
 
 #%%
@@ -146,8 +147,8 @@ print(f"Unique emerging songs: {len(emerging_song_ids)}")
 
 #%%
 
-emerging_songs_df = total_hot_100[total_hot_100["song_id"].isin(emerging_song_ids)].copy()
-print(f"Unique emerging songs: {len(emerging_songs_df['song_id'].unique())}")
+emerging_songs = total_hot_100[total_hot_100["song_id"].isin(emerging_song_ids)].copy()
+print(f"Unique emerging songs: {len(emerging_songs['song_id'].unique())}")
 
 #%%
 
@@ -273,13 +274,13 @@ def compute_main_artist_from_artists(artists_str: str) -> str:
 def compute_main_artist_from_song_id(song_id: str) -> str:
     return compute_main_artist_from_artists(extract_artists(song_id))
 
-# %%
+#%%
 
 # Let's apply the code above to parse the main artists from each release, and calculate unique performers etc.
-emerging_songs_df["main_artist"] = emerging_songs_df["song_id"].apply(compute_main_artist_from_song_id)
+emerging_songs["main_artist"] = emerging_songs["song_id"].apply(compute_main_artist_from_song_id)
 
 # Here are some instances of artists with two names that we need to normalize
-emerging_songs_df.replace({
+emerging_songs.replace({
     "JIN": "Jin",
     "4*TOWN (From Disney": "4*TOWN (From Disney And Pixar's Turning Red)",
     "mgk": "Machine Gun Kelly",
@@ -301,27 +302,534 @@ emerging_songs_df.replace({
     "Mariah The Scientist": "Mariah the Scientist"
 }, inplace=True)
 
-collab_rows = emerging_songs_df[
-    emerging_songs_df["main_artist"] != emerging_songs_df["performers"]
+collab_rows = emerging_songs[
+    emerging_songs["main_artist"] != emerging_songs["performers"]
 ]
 
-solo_rows = emerging_songs_df[
-    emerging_songs_df["main_artist"] == emerging_songs_df["performers"]
+solo_rows = emerging_songs[
+    emerging_songs["main_artist"] == emerging_songs["performers"]
 ]
 
 num_unique_collab_songs = collab_rows["song_id"].nunique()
 num_unique_solo_songs = solo_rows["song_id"].nunique()
 num_unique_solo_artists = solo_rows["main_artist"].nunique()
 
-emerging_songs_df.to_csv("data/processed_data/emerging_songs.csv", index=False)
+# emerging_songs_df.to_csv("data/processed_data/emerging_songs.csv", index=False)
 
-
-# %%
+#%%
 
 print(f"Unique songs (solo releases): {num_unique_solo_songs}")
 print(f"Unique songs (collab releases): {num_unique_collab_songs}")
 print(f"Unique solo artists: {num_unique_solo_artists}")
-print(f"Unique performers: {emerging_songs_df['performers'].nunique()}")
-print(f"Unique main artists: {emerging_songs_df['main_artist'].nunique()}")
+print(f"Unique performers: {emerging_songs['performers'].nunique()}")
+print(f"Unique main artists: {emerging_songs['main_artist'].nunique()}")
 
-# %%
+#%%
+
+"""
+There are a few potential considerations before data splitting and feature engineering:
+
+Some of our unique artists have several songs - should we randomly select one per artist?
+
+We only want to use data prior to, or on a particular song's release date. 
+
+We must remember that there are one-off null values in Social Data, which we need to account for (Maybe Imputation?).
+
+We want to create features inspired by the following:
+
+- Artist Follower Count (On Release Date)
+- Compound Weekly Growth Rate of Artist Followers (the 4 weeks prior to release)
+- Relevancy-to-Release Score - How relevant is the content of their posting to the release? (via NLP on comments, captions, hashtags)
+
+- post rate
+- cwgr
+
+Potential:
+- Primary Genre Tag (To account for the imbalance of solo releases)
+- First week position on Hot 100
+- Song Duration
+
+Feature Scaling:
+It might be advantageous to log transform for CWGR.
+Maybe Min Max normalize or z-score. 
+
+Here are some fields to add to a new df prior to spltting:
+- song_id
+- title
+- artist
+- release_date
+- entry_week_date
+- entry_week_pos
+- peak_pos
+- lifespan
+"""
+
+#%%
+
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+import ast
+from utils import expand_to_full_window, plot_two_metrics_song, plot_two_metrics_artist
+
+#%%
+
+# emerging_songs = pd.read_csv("data/processed_data/emerging_songs.csv")
+
+solo_songs = emerging_songs[emerging_songs["main_artist"] == emerging_songs["performers"]].copy()
+solo_songs = solo_songs.drop_duplicates(subset="song_id")
+
+metadata = pd.read_csv("data/processed_data/metadata.csv")
+metadata["genreNames"] = metadata["genreNames"].apply(lambda x: ast.literal_eval(x) if pd.notnull(x) else [])
+metadata.drop(columns=["Unnamed: 0"], inplace=True)
+
+#%%
+
+# sampled_solo_songs = (solo_songs
+#            .groupby("main_artist", group_keys=False)
+#            .apply(lambda g: g.sample(1, random_state=42))
+#            .reset_index(drop=True))
+
+song_peaks = (emerging_songs
+           .groupby("song_id", as_index=False)["current_week"]
+           .min()
+           .rename(columns={"current_week": "peak_pos"}))
+
+lifespans = (emerging_songs
+           .groupby("song_id", as_index=False)["wks_on_chart"]
+           .max()
+           .rename(columns={"wks_on_chart": "lifespan"}))
+
+songs = pd.DataFrame({
+    "song_id": solo_songs["song_id"],
+    "title": solo_songs["title"],
+    "artist": solo_songs["main_artist"],
+    "entry_week_date": solo_songs["chart_week"],
+    "entry_week_pos": solo_songs["current_week"],
+})
+
+# songs = pd.DataFrame({
+#     "song_id": sampled_solo_songs["song_id"],
+#     "title": sampled_solo_songs["title"],
+#     "artist": sampled_solo_songs["main_artist"],
+#     "entry_week_date": sampled_solo_songs["chart_week"],
+#     "entry_week_pos": sampled_solo_songs["current_week"],
+# })
+
+songs = songs.merge(
+    metadata[["song_id", "releaseDate", "genreNames", "durationInMillis"]]
+      .rename(columns={"releaseDate": "release_date", "genreNames": "genres", "durationInMillis": "song_length"}),
+    on="song_id",
+    how="left"
+)
+
+# remove the string "Music" genres column
+songs["genres"] = songs["genres"].apply(
+    lambda g: [x for x in g if x != "Music"]
+)
+
+songs["song_length"] = songs["song_length"] / 60000
+
+songs = songs.merge(song_peaks, on="song_id", how="left")
+songs = songs.merge(lifespans, on="song_id", how="left")
+
+#%%
+
+# bins = [0, 2, 8, 16, 32, 64, songs['lifespan'].max()]
+# labels = ["1–2", "3–8", "9–16", "17–32", "33–64", "65+"]
+# songs['lifespan_bin'] = pd.cut(songs['lifespan'], bins=bins, labels=labels, include_lowest=True, right=True)
+
+#%%
+
+cols = ["song_id", "title", "artist", "genres",
+        "song_length", "release_date", "entry_week_date", 
+        "entry_week_pos", "peak_pos", "lifespan"] # add lifespan_bin if following chon
+
+songs = songs[cols]
+songs
+
+#%%
+
+from sklearn.preprocessing import MultiLabelBinarizer
+
+mlb = MultiLabelBinarizer()
+genre_df = pd.DataFrame(
+    mlb.fit_transform(songs['genres']),
+    columns=mlb.classes_,
+    index=songs.index
+)
+
+#%%
+
+songs = pd.concat([songs.drop(columns='genres'), genre_df], axis=1)
+songs
+
+#%%
+
+"""
+Ok, now, we do / compute the following before the train test split
+1. Linearly interpolate youtube time-series when almost certainly missing
+"""
+
+#%%
+
+instagram = pd.read_csv("data/raw_data/social_archives/instagram_archive.csv")
+instagram["date"] = pd.to_datetime(instagram["date"])
+instagram.drop(columns=["Unnamed: 0"], inplace=True)
+
+tiktok = pd.read_csv("data/raw_data/social_archives/tiktok_archive.csv")
+tiktok["date"] = pd.to_datetime(tiktok["date"])
+tiktok.drop(columns=["Unnamed: 0"], inplace=True)
+
+youtube = pd.read_csv("data/raw_data/social_archives/youtube_archive.csv")
+youtube["date"] = pd.to_datetime(youtube["date"])
+youtube.drop(columns=["Unnamed: 0"], inplace=True)
+
+#%%
+
+"""
+Let's plot a null heatmap to see where artists are missing data in each social
+platform. 
+
+for Youtube, it seems to be specifically when SocialBlade API changed their API.
+"""
+
+#%%
+
+youtube = youtube.merge(
+    songs[["artist", "song_id", "release_date"]],
+    left_on="artist_id",
+    right_on="artist",
+    how="left"
+)
+
+youtube["date"] = pd.to_datetime(youtube["date"])
+youtube["release_date"] = pd.to_datetime(youtube["release_date"])
+
+mask = (
+    (youtube["date"] >= youtube["release_date"] - pd.Timedelta(days=365)) &
+    (youtube["date"] <= youtube["release_date"])
+)
+
+yt_pre12_df = (
+    youtube.loc[mask, ["artist","song_id","platform","date","release_date","subs","views"]]
+    .sort_values(["artist","song_id","date"])
+    .reset_index(drop=True)
+)
+
+yt_pre12_clean = expand_to_full_window(yt_pre12_df, ("artist","song_id","platform"), "date", "release_date", 365)
+
+#%%
+"""
+Let's plot ALL Artist youtube data prior to release.
+"""
+plot_two_metrics_song(
+    yt_pre12_clean,
+    metric1="subs",
+    metric2="views",
+    outdir="graphs/yt_12_month_raw",
+    filename_pattern="yt_{song}_{platform}.png"
+)
+
+#%%
+
+df = yt_pre12_clean.sort_values(["song_id", "platform", "date"]).copy()
+grp = ["song_id", "platform"]
+
+# 1) Mark zeros that are almost surely "missing" (group has some positive values)
+views_has_pos = df.groupby(grp)["views"].transform("max") > 0
+subs_has_pos  = df.groupby(grp)["subs"].transform("max")  > 0
+
+zero_views_missing = (df["views"] == 0) & views_has_pos
+zero_subs_missing  = (df["subs"]  == 0) & subs_has_pos
+
+df["views_zero_proxy_missing"] = zero_views_missing
+df["subs_zero_proxy_missing"]  = zero_subs_missing
+
+#%%
+
+target = df[df["views_zero_proxy_missing"] == True]['artist'].unique()
+
+#%%
+
+"""
+array(['sombr', 'Jessie Murph', 'Morgan Wallen', 'Justin Bieber',
+       'Megan Moroney', 'Max McNown', 'Luke Combs', 'Lil Wayne',
+       'Mariah the Scientist', '$uicideboy$', 'Sleep Token',
+       'Tyler, The Creator', 'Travis Scott', 'Miley Cyrus', 'Alex Warren',
+       'Don Toliver', 'Addison Rae', 'Kehlani', 'Dareyes de La Sierra',
+       'KATSEYE', 'Eric Church', 'Chris Brown', 'Lady Gaga', 'ATEEZ',
+       'BLACKPINK', 'Tate McRae', 'Gunna', 'Karol G', 'Paul Russell',
+       'ILLIT', 'Sabrina Carpenter', 'Fuerza Regida', 'Ivan Cornejo',
+       'Benson Boone', 'Chuckyy', 'Lil Tecca', 'JT', 'Ed Sheeran',
+       'Cardi B', 'YG Marley', 'Zach Bryan', 'Latto', 'Lainey Wilson',
+       'Chappell Roan', 'Gelo', 'GloRilla', 'Mariah Carey',
+       'BabyChiefDoit', 'Drake', 'Lorde', 'Fridayy'], dtype=object)
+
+It's important to note, SocialBlade API went down for a few days in April 2025. 
+
+Those above with (Impute) are because of this, YG Marley's page was at 0 views 
+4 weeks before release. 
+"""
+
+#%%
+
+df[df["subs_zero_proxy_missing"] == True]['artist'].unique()
+# None
+
+#%%
+"""
+Ok, let's turn the 0.0 values to NaNs and then impute them with linear interpolation.
+"""
+
+#%%
+
+df.loc[zero_views_missing, "views"] = np.nan
+
+grp_interp = ["song_id", "platform"]
+df["views"] = df.groupby(grp_interp)["views"].transform(lambda s: s.interpolate())
+df["subs"]  = df.groupby(grp_interp)["subs"].transform(lambda s: s.interpolate())
+
+yt_pre12_clean = df
+
+#%%
+
+plot_two_metrics_song(yt_pre12_clean, metric1="subs", metric2="views",
+                artists=target,
+                 outdir="graphs/yt_12_month_imputed",
+                 filename_pattern="yt_{song}_{platform}.png")
+
+#%%
+"""
+
+Interpolation looks good based on the graphs,
+one thing to note though:
+Drake
+Morgan Wallen
+Benson Boone
+
+were all victim to what seems like a data quality issue on SocialBlade's part
+
+Rather than the 0.0 filling for missed values, in 2023 march - may, 
+
+there are consistent dips among the three of their views, basically carved out in th same spots
+
+I anticipate these are things we should interpolate as this must be a scraping error on socialblades behalf
+"""
+#%%
+
+df["song_id"].nunique()
+
+#%%
+"""
+Ok, Let's check for IG. 
+"""
+#%%
+
+instagram = instagram.merge(
+    songs[["artist", "song_id", "release_date"]],
+    left_on="artist_id",
+    right_on="artist",
+    how="left"
+)
+
+instagram["date"] = pd.to_datetime(instagram["date"])
+instagram["release_date"] = pd.to_datetime(instagram["release_date"])
+
+mask = (
+    (instagram["date"] >= instagram["release_date"] - pd.Timedelta(days=365)) &
+    (instagram["date"] <= instagram["release_date"])
+)
+
+ig_pre12_df = (
+    instagram.loc[mask, ["artist","song_id","platform","date","release_date","followers","following", "media"]].copy()
+    .sort_values(["artist","song_id","date"])
+    .reset_index(drop=True)
+)
+
+ig_pre12_clean = expand_to_full_window(ig_pre12_df, ("artist","song_id","platform"), "date", "release_date", 365)
+
+#%%
+"""
+Let's plot ALL Artist Instagram data prior to release.
+"""
+plot_two_metrics_song(
+    ig_pre12_clean,
+    metric1="followers",
+    metric2="media",
+    outdir="graphs/ig_12_month_raw",
+    filename_pattern="ig_{song}_{platform}.png"
+)
+
+#%%
+
+df = ig_pre12_clean.sort_values(["song_id", "platform", "date"]).copy()
+grp = ["song_id", "platform"]
+
+# 1) Mark zeros that are almost surely "missing" (group has some positive values)
+followers_has_pos = df.groupby(grp)["followers"].transform("max") > 0
+media_has_pos  = df.groupby(grp)["media"].transform("max")  > 0
+
+zero_followers_missing = (df["followers"] == 0) & followers_has_pos
+zero_media_missing  = (df["media"]  == 0) & media_has_pos
+
+df["followers_zero_proxy_missing"] = zero_followers_missing
+df["media_zero_proxy_missing"]  = zero_media_missing
+
+#%%
+
+df[df["followers_zero_proxy_missing"] == True]['artist'].unique()
+
+#%%
+"""
+array(['Lil Durk', 'Polo G', 'Moneybagg Yo', 'j-hope'
+
+There are instances after using expand to full window where we need to beware of NaNs
+and impute those, rather than just 0s
+
+Let's impute, but skip the protocol of making 0s NaNs
+"""
+
+#%%
+df.loc[zero_followers_missing, "followers"] = np.nan
+
+grp_interp = ["song_id", "platform"]
+df["followers"] = df.groupby(grp_interp)["followers"].transform(lambda s: s.interpolate())
+
+ig_pre12_clean = df
+
+#%%
+
+plot_two_metrics_song(
+    ig_pre12_clean,
+    metric1="followers",
+    metric2="media",
+    outdir="graphs/ig_12_month_imputed",
+    filename_pattern="ig_{song}_{platform}.png"
+)
+
+#%%
+"""
+Same for Instagram. Let's check for TikTok.
+"""
+#%%
+
+tiktok = tiktok.merge(
+    songs[["artist", "song_id", "release_date"]],
+    left_on="artist_id",
+    right_on="artist",
+    how="left"
+)
+
+tiktok["date"] = pd.to_datetime(tiktok["date"])
+tiktok["release_date"] = pd.to_datetime(tiktok["release_date"])
+
+mask = (
+    (tiktok["date"] >= tiktok["release_date"] - pd.Timedelta(days=365)) &
+    (tiktok["date"] <= tiktok["release_date"])
+)
+
+tt_pre12_df = (
+    tiktok.loc[mask, ["artist","song_id","platform","date","release_date","followers","following","uploads","likes"]].copy()
+    .sort_values(["artist","song_id","date"])
+    .reset_index(drop=True)
+)
+
+tt_pre12_clean = expand_to_full_window(tt_pre12_df, ("artist","song_id","platform"), "date", "release_date", 365)
+
+#%%
+
+plot_two_metrics_song(
+    tt_pre12_clean,
+    metric1="followers",
+    metric2="likes",
+    outdir="graphs/tt_12_month_raw",
+    filename_pattern="tt_{song}_{platform}.png"
+)
+
+#%%
+
+df = tt_pre12_clean.sort_values(["song_id", "platform", "date"]).copy()
+grp = ["song_id", "platform"]
+
+# 1) Mark zeros that are almost surely "missing" (group has some positive values)
+followers_has_pos = df.groupby(grp)["followers"].transform("max") > 0
+uploads_has_pos  = df.groupby(grp)["uploads"].transform("max")  > 0
+likes_has_pos  = df.groupby(grp)["likes"].transform("max")  > 0
+
+zero_followers_missing = (df["followers"] == 0) & followers_has_pos
+zero_media_missing  = (df["uploads"]  == 0) & uploads_has_pos
+zero_likes_missing  = (df["likes"]  == 0) & likes_has_pos
+
+df["followers_zero_proxy_missing"] = zero_followers_missing
+df["uploads_zero_proxy_missing"]  = zero_media_missing
+df["likes_zero_proxy_missing"]  = zero_likes_missing
+
+#%%
+
+df[df["followers_zero_proxy_missing"] == True]['artist'].unique()
+"""
+array(['Sabrina Carpenter', 'Lizzo', 'Tate McRae', 'Megan Moroney',
+       'Lil Yachty', 'Lady Gaga', 'Doja Cat', 'Luke Combs', '21 Savage',
+       'Olivia Rodrigo', 'Beyonce', 'Rod Wave', 'The Kid LAROI',
+       'Bad Bunny', 'Gunna', 'Benson Boone', 'Lil Wayne', 'Latto',
+       'Megan Thee Stallion', 'Billie Eilish', 'Dove Cameron',
+       'Kane Brown', 'Lil Uzi Vert', 'Stray Kids', 'Jack Harlow',
+       'Luke Bryan', 'LE SSERAFIM', 'Meghan Trainor', 'David Kushner',
+       'Rauw Alejandro', 'Ice Spice', 'Doechii', 'Lil Baby',
+       'Travis Scott', 'Hozier', 'Cardi B', 'Alex Warren', 'Don Toliver',
+       'd4vd', 'Lewis Capaldi', 'NLE Choppa', 'Young Thug',
+       'Russell Dickerson', 'Dua Lipa', 'ATEEZ', 'Lauren Spencer-Smith',
+       'Teddy Swims', 'Selena Gomez', 'Muni Long', 'Leon Thomas', 'Russ',
+       'Tinashe', 'Fuerza Regida', 'Labrinth', 'The Marias', 'Tyla',
+       'Chris Brown', 'BTS', 'Laufey', 'Karol G', 'Tim McGraw', 'TWICE',
+       'Kenny Chesney', 'Chloe', 'Giveon', 'Lil Durk', 'Jonas Brothers',
+       'Tucker Wetmore', 'Noah Kahan', 'Forrest Frank'], dtype=object)
+"""
+#%%
+
+df[df["likes_zero_proxy_missing"] == True]['artist'].unique()
+"""
+array(['Morgan Wallen', 'Lady Gaga', 'Doja Cat', 'Beyonce',
+       'Chris Janson', 'Karol G', 'Bad Bunny', 'sombr', 'Don Toliver',
+       'Jordan Davis', 'Kane Brown', 'Luke Bryan', 'Juice WRLD',
+       'Sabrina Carpenter', 'Russell Dickerson', 'Megan Thee Stallion',
+       'Cynthia Erivo', 'Lil Nas X', 'Stray Kids', 'Paul Russell',
+       'Chase Matthew', 'Jack Harlow', 'Muni Long', 'TWICE', 'Russ',
+       'P!nk', 'Megan Moroney', 'Blink-182', 'Jack Black', 'Corey Kent',
+       'Sia', 'Jonas Brothers'], dtype=object)
+"""
+
+#%%
+# Impute Tiktok Followers for these artists
+
+df.loc[zero_followers_missing, "followers"] = np.nan
+df.loc[zero_likes_missing, "likes"] = np.nan
+
+grp_interp = ["song_id", "platform"]
+df["followers"] = df.groupby(grp_interp)["followers"].transform(lambda s: s.interpolate())
+df["likes"]  = df.groupby(grp_interp)["likes"].transform(lambda s: s.interpolate())
+
+tt_pre12_clean = df
+
+#%%
+
+plot_two_metrics_song(
+    tt_pre12_clean,
+    metric1="followers",
+    metric2="likes",
+    outdir="graphs/tt_12_month_imputed",
+    filename_pattern="tt_{song}_{platform}.png"
+)
+
+#%%
+"""
+Ok, we've linearly interpolated missing time-series data for artists!
+"""
+#%%
+
+ig_pre12_clean.to_csv("data/processed_data/12m_ig_pre_release.csv", index=False)
+tt_pre12_clean.to_csv("data/processed_data/12m_tt_pre_release.csv", index=False)
+yt_pre12_clean.to_csv("data/processed_data/12m_yt_pre_release.csv", index=False)
+songs.to_csv("data/processed_data/songs.csv", index=False)
+
