@@ -587,8 +587,8 @@ Ok, let's turn the 0.0 values to NaNs and then impute them with linear interpola
 df.loc[zero_views_missing, "views"] = np.nan
 
 grp_interp = ["song_id", "platform"]
-df["views"] = df.groupby(grp_interp)["views"].transform(lambda s: s.interpolate())
-df["subs"]  = df.groupby(grp_interp)["subs"].transform(lambda s: s.interpolate())
+df["views"] = df.groupby(grp_interp)["views"].transform(lambda s: s.ffill())
+df["subs"]  = df.groupby(grp_interp)["subs"].transform(lambda s: s.ffill())
 
 yt_pre12_clean = df
 
@@ -694,7 +694,7 @@ Let's impute, but skip the protocol of making 0s NaNs
 df.loc[zero_followers_missing, "followers"] = np.nan
 
 grp_interp = ["song_id", "platform"]
-df["followers"] = df.groupby(grp_interp)["followers"].transform(lambda s: s.interpolate())
+df["followers"] = df.groupby(grp_interp)["followers"].transform(lambda s: s.ffill())
 
 ig_pre12_clean = df
 
@@ -807,8 +807,8 @@ df.loc[zero_followers_missing, "followers"] = np.nan
 df.loc[zero_likes_missing, "likes"] = np.nan
 
 grp_interp = ["song_id", "platform"]
-df["followers"] = df.groupby(grp_interp)["followers"].transform(lambda s: s.interpolate())
-df["likes"]  = df.groupby(grp_interp)["likes"].transform(lambda s: s.interpolate())
+df["followers"] = df.groupby(grp_interp)["followers"].transform(lambda s: s.ffill())
+df["likes"]  = df.groupby(grp_interp)["likes"].transform(lambda s: s.ffill())
 
 tt_pre12_clean = df
 
@@ -828,8 +828,712 @@ Ok, we've linearly interpolated missing time-series data for artists!
 """
 #%%
 
+yt_pre12_clean.drop(columns=["views_zero_proxy_missing", "subs_zero_proxy_missing"], inplace=True)
+tt_pre12_clean.drop(columns=["followers_zero_proxy_missing", "uploads_zero_proxy_missing", "likes_zero_proxy_missing"], inplace=True)
+ig_pre12_clean.drop(columns=["followers_zero_proxy_missing", "media_zero_proxy_missing"], inplace=True)
+
+#%%
+
 ig_pre12_clean.to_csv("data/processed_data/12m_ig_pre_release.csv", index=False)
 tt_pre12_clean.to_csv("data/processed_data/12m_tt_pre_release.csv", index=False)
 yt_pre12_clean.to_csv("data/processed_data/12m_yt_pre_release.csv", index=False)
 songs.to_csv("data/processed_data/songs.csv", index=False)
 
+#%%
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+ig_pre12_clean = pd.read_csv('data/processed_data/12m_ig_pre_release.csv')
+tt_pre12_clean = pd.read_csv('data/processed_data/12m_tt_pre_release.csv')
+yt_pre12_clean = pd.read_csv('data/processed_data/12m_yt_pre_release.csv')
+
+#%%
+
+'''
+TIKTOK
+---
+From 1 -> 10,000
+TT changes by 1
+
+From 10,000 -> 1,000,000
+TT changes by 100
+
+From 1,000,000 -> 10,000,000
+TT changes by 10K or (25K sometimes)
+
+From 10,000,000 -> 100,000,000
+YT changes by 100K
+
+YOUTUBE SUBS
+
+From 1 -> 1,000
+YT changes by 1
+
+From 1,000 -> 10,000
+YT changes by 10
+
+From 10,000 -> 100,000
+YT changes by 100
+
+From 100,000 -> 1,000,000
+YT changes by 1K
+
+From 1,000,000 -> 10,000,000
+YT changes by 10K
+
+From 10,000,000 -> 100,000,000
+YT changes by 100K
+
+
+NOTICE:
+
+YT Views tends to have the absurd drops
+
+These values actually aren't rounded, but there is clearly issue with how often
+the view values are being scraped, and because of this, there are still places that must be imputed
+'''
+
+#%%
+
+ROUNDING_RULES = {
+    "yt_subs": [
+        (1_000,        1),
+        (10_000,       10),
+        (100_000,      100),
+        (1_000_000,    1_000),
+        (10_000_000,   10_000),
+        (100_000_000,  100_000),
+        (1_000_000_000, None),
+        (10_000_000_000, None),
+        (100_000_000_000, None),
+    ],
+    "yt_views": [
+        (1_000,        1),
+        (10_000,       1),
+        (100_000,      1),
+        (1_000_000,    1),
+        (10_000_000,   1),
+        (100_000_000,  1),
+        (1_000_000_000, None),
+        (10_000_000_000, None),
+        (100_000_000_000, None),
+    ],
+    "tt_followers": [
+        (1_000,        1),
+        (10_000,       1),
+        (100_000,      100),
+        (1_000_000,    100),
+        (10_000_000,   100_000),
+        (100_000_000,  100_000),
+        (1_000_000_000, None),
+        (10_000_000_000, None),
+        (100_000_000_000, None),
+    ],
+    "tt_likes": [
+        (1_000,        1),
+        (10_000,       1),
+        (100_000,      100),
+        (1_000_000,    100),
+        (10_000_000,   100_000),
+        (100_000_000,  100_000),
+        (1_000_000_000, 100_000),
+        (10_000_000_000, 100_000_000),
+        (100_000_000_000, None),
+    ],
+    "ig_followers": [
+        (1_000,        1),
+        (10_000,       1),
+        (100_000,      1),
+        (1_000_000,    1),
+        (10_000_000,   1),
+        (100_000_000,  1),
+        (1_000_000_000, 1),
+        (10_000_000_000, None),
+        (100_000_000_000, None),
+    ],
+}
+
+def display_value(x, field):
+    rules = ROUNDING_RULES[field]
+    for upper, unit in rules:
+        if x < upper:
+            if unit is None:
+                return x
+            return (x // unit) * unit
+    return x
+
+# def keep_threshold_crossings(series, field):
+#     keep = []
+#     prev_display = None
+    
+#     for x in series:
+#         dv = display_value(x, field)
+#         keep.append(dv != prev_display)
+#         prev_display = dv
+
+def keep_threshold_crossings(series, field):
+    dv = np.array([display_value(x, field) for x in series])
+    n = len(dv)
+
+    keep = np.zeros(n, dtype=bool)
+
+    i = 0
+    while i < n:
+        j = i
+        # find plateau end
+        while j + 1 < n and dv[j+1] == dv[i]:
+            j += 1
+
+        prev = dv[i-1] if i > 0 else None
+        curr = dv[i]
+        next_ = dv[j+1] if j+1 < n else None
+
+        # evaluate cases
+
+        # Case 1: monotonically increasing
+        if prev is not None and prev < curr and (next_ is None or next_ > curr):
+            keep[i] = True   # left
+
+        # Case 2: monotonically decreasing
+        if prev is not None and prev > curr and (next_ is None or next_ < curr):
+            keep[j] = True   # right
+
+        # Case 3: up → flat → down
+        if prev is not None and prev < curr and next_ is not None and next_ < curr:
+            keep[i] = True   # left
+            keep[j] = True   # right
+
+        # Case 4: down → flat → up
+        if prev is not None and prev > curr and next_ is not None and next_ > curr:
+            keep[j] = True   # right
+            keep[i] = True   # left
+
+        # If no prev (start), default to keeping plateau edges
+        if prev is None:
+            keep[i] = True
+        # If no next (end), default to keeping plateau edge
+        if next_ is None:
+            keep[j] = True
+
+        i = j + 1
+
+    return pd.Series(keep, index=series.index)
+
+def apply_keep_flag(group, col, model_key, out_col):
+    g = group.sort_values("date").copy()
+    g[out_col] = keep_threshold_crossings(g[col], model_key)
+    return g
+
+#%%
+
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+
+#%%
+
+import numpy as np
+
+yt_pre12_clean = (
+    yt_pre12_clean
+    .groupby("song_id", group_keys=False)
+    .apply(lambda g: apply_keep_flag(g, "subs", "yt_subs", "subs_keep"))
+)
+
+yt_pre12_clean = (
+    yt_pre12_clean
+    .groupby("song_id", group_keys=False)
+    .apply(lambda g: apply_keep_flag(g, "views", "yt_views", "views_keep"))
+)
+
+tt_pre12_clean = (
+    tt_pre12_clean
+    .groupby("song_id", group_keys=False)
+    .apply(lambda g: apply_keep_flag(g, "followers", "tt_followers", "followers_keep"))
+)
+
+tt_pre12_clean = (
+    tt_pre12_clean
+    .groupby("song_id", group_keys=False)
+    .apply(lambda g: apply_keep_flag(g, "likes", "tt_likes", "likes_keep"))
+)
+
+#%%
+
+song = yt_pre12_clean.song_id.sample().iloc[0]
+
+d = yt_pre12_clean[yt_pre12_clean["song_id"] == song].sort_values("date")
+d["date"] = pd.to_datetime(d["date"])
+
+import matplotlib.dates as mdates
+
+fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+
+axes[0].plot(d["date"], d["subs"], linewidth=1)
+axes[0].scatter(d[d["subs_keep"]]["date"], d[d["subs_keep"]]["subs"], linewidth=2, alpha=0.2)
+axes[0].set_title(f"Youtube Subscribers ({song})")
+
+axes[1].plot(d["date"], d["views"], linewidth=1)
+axes[1].scatter(d[d["views_keep"]]["date"], d[d["views_keep"]]["views"], linewidth=2, alpha=0.2)
+axes[1].set_title(f"Youtube Views ({song})")
+
+axes[1].xaxis.set_major_locator(mdates.MonthLocator())
+axes[1].xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+plt.setp(axes[1].get_xticklabels(), rotation=45, ha="right")
+
+plt.tight_layout()
+plt.show()
+
+#%%
+
+# song = tt_pre12_clean.song_id.sample().iloc[0]
+
+d = tt_pre12_clean[tt_pre12_clean["song_id"] == song].sort_values("date")
+d["date"] = pd.to_datetime(d["date"])
+
+import matplotlib.dates as mdates
+
+fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+
+axes[0].plot(d["date"], d["followers"], linewidth=1)
+axes[0].scatter(d[d["followers_keep"]]["date"], d[d["followers_keep"]]["followers"], linewidth=2, alpha=0.2)
+axes[0].set_title(f"TikTok Followers ({song})")
+
+axes[1].plot(d["date"], d["likes"], linewidth=1)
+axes[1].scatter(d[d["likes_keep"]]["date"], d[d["likes_keep"]]["likes"], linewidth=2, alpha=0.2)
+axes[1].set_title(f"TikTok Likes ({song})")
+
+axes[1].xaxis.set_major_locator(mdates.MonthLocator())
+axes[1].xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+plt.setp(axes[1].get_xticklabels(), rotation=45, ha="right")
+
+plt.tight_layout()
+plt.show()
+
+#%%
+
+import numpy as np
+
+def interpolate_metric(df, value_col, keep_col):
+    df = df.sort_values(["song_id", "date"]).copy()
+    df["date"] = pd.to_datetime(df["date"])
+    df["t"] = df["date"].astype("int64")
+    out_col = value_col + "_interp"
+    df[out_col] = np.nan
+
+    for sid, sub in df.groupby("song_id"):
+        idx = sub.index
+        t = sub["t"].values
+        y = sub[value_col].astype(float).values
+
+        # identify the first real (non-NaN) raw value
+        first_valid_idx = np.where(np.isfinite(y))[0][0]
+
+        mask = sub[keep_col].values & np.isfinite(y)
+
+        t_keep = t[mask]
+        y_keep = y[mask]
+
+        uniq, uniq_idx = np.unique(t_keep, return_index=True)
+        t_keep = t_keep[uniq_idx]
+        y_keep = y_keep[uniq_idx]
+
+        # linear interpolation
+        base = np.interp(t, t_keep, y_keep)
+
+        # no backfill before first keep
+        base[0] = y_keep[0]
+        base[t < t_keep[0]] = y_keep[0]
+
+        # enforce raw-first rule: NO values before first real data point
+        base[:first_valid_idx] = np.nan
+
+        # forward-fill after last keep point
+        base[t > t_keep[-1]] = y_keep[-1]
+
+        df.loc[idx, out_col] = base
+
+    return df
+
+
+tt_pre12_clean = interpolate_metric(tt_pre12_clean, "followers", "followers_keep")
+tt_pre12_clean = interpolate_metric(tt_pre12_clean, "likes", "likes_keep")
+
+yt_pre12_clean = interpolate_metric(yt_pre12_clean, "subs", "subs_keep")
+yt_pre12_clean = interpolate_metric(yt_pre12_clean, "views", "views_keep")
+
+#%%
+
+song = tt_pre12_clean.song_id.sample().iloc[0]
+
+d = tt_pre12_clean[tt_pre12_clean["song_id"] == song].sort_values("date")
+d["date"] = pd.to_datetime(d["date"])
+
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+
+fig, axes = plt.subplots(4, 1, figsize=(14, 12), sharex=True)
+
+# 1. Raw followers
+axes[0].plot(d["date"], d["followers"], color="gray", linewidth=1)
+axes[0].scatter(
+    d.loc[d["followers_keep"], "date"],
+    d.loc[d["followers_keep"], "followers"],
+    s=15, 
+    alpha=0.2
+)
+axes[0].set_title(f"Raw TikTok Followers ({song})")
+
+# 2. Interpolated followers
+axes[1].plot(d["date"], d["followers_interp"], linewidth=2)
+axes[1].set_title("Interpolated TikTok Followers")
+
+# 3. Raw likes
+axes[2].plot(d["date"], d["likes"], color="gray", linewidth=1)
+axes[2].scatter(
+    d.loc[d["likes_keep"], "date"],
+    d.loc[d["likes_keep"], "likes"],
+    s=15, 
+    alpha=0.2
+)
+axes[2].set_title("Raw TikTok Likes")
+
+# 4. Interpolated likes
+axes[3].plot(d["date"], d["likes_interp"], linewidth=2)
+axes[3].set_title("Interpolated TikTok Likes")
+
+axes[3].xaxis.set_major_locator(mdates.MonthLocator())
+axes[3].xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+plt.setp(axes[3].get_xticklabels(), rotation=45, ha="right")
+
+plt.tight_layout()
+plt.show()
+
+sum(d['followers'].notnull()), sum(d['followers_interp'].notnull())
+
+#%%
+"""
+NEW SECTION
+"""
+
+ig_pre12_clean['ig_followers_diff_daily'] = (
+    ig_pre12_clean
+    .groupby('song_id')['followers']
+    .transform(lambda s: s - s.shift(1))
+)
+
+ig_pre12_clean['ig_media_diff_daily'] = (
+    ig_pre12_clean
+    .groupby('song_id')['media']
+    .transform(lambda s: s - s.shift(1))
+)
+
+tt_pre12_clean['tt_followers_diff_daily'] = (
+    tt_pre12_clean
+    .groupby('song_id')['followers_interp']
+    .transform(lambda s: s - s.shift(1))
+)
+
+tt_pre12_clean['tt_likes_diff_daily'] = (
+    tt_pre12_clean
+    .groupby('song_id')['likes_interp']
+    .transform(lambda s: s - s.shift(1))
+)
+
+tt_pre12_clean['tt_uploads_diff_daily'] = (
+    tt_pre12_clean
+    .groupby('song_id')['uploads']
+    .transform(lambda s: s - s.shift(1))
+)
+
+yt_pre12_clean['yt_subs_diff_daily'] = (
+    yt_pre12_clean
+    .groupby('song_id')['subs_interp']
+    .transform(lambda s: s - s.shift(1))
+)
+
+yt_pre12_clean['yt_views_diff_daily'] = (
+    yt_pre12_clean
+    .groupby('song_id')['views_interp']
+    .transform(lambda s: s - s.shift(1))
+)
+
+#%%
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+df = ig_pre12_clean.copy()
+df['date'] = pd.to_datetime(df['date'])
+
+# Align all artists
+df['days_since_start'] = (
+    df.groupby('song_id')['date']
+      .transform(lambda d: (d - d.min()).dt.days)
+)
+
+# Select top 20 deviations
+top10 = (
+    df[['song_id','days_since_start','ig_followers_diff_daily']]
+    .sort_values('ig_followers_diff_daily', ascending=True)
+    .head(10)
+)
+
+plt.figure(figsize=(12, 6))
+
+# Plot all lines
+for song_id, group in df.groupby('song_id'):
+    group = group.sort_values('days_since_start')
+    plt.plot(
+        group['days_since_start'],
+        group['ig_followers_diff_daily'],
+        alpha=0.5
+    )
+
+# Hardcoded offsets (you can replace these with a circular set)
+offsets = [
+    (10, -14),(-120,  14),(-14, 10)
+]
+
+# Enforce uniqueness constraints
+seen_points = set()
+seen_songs = set()
+label_i = 0   # offset index
+
+for _, row in top10.iterrows():
+    song = row['song_id']
+    x = row['days_since_start']
+    y = row['ig_followers_diff_daily']
+
+    # Skip if already annotated this song_id
+    if song in seen_songs:
+        continue
+
+    # Skip if this coordinate was already annotated
+    if (x, y) in seen_points:
+        continue
+
+    # Record uniqueness
+    seen_songs.add(song)
+    seen_points.add((x, y))
+
+    # Use next offset only when actually annotating
+    dx, dy = offsets[label_i]
+    label_i += 1
+
+    # Draw annotation
+    plt.annotate(
+        song,
+        xy=(x, y),
+        xytext=(dx, dy),
+        textcoords='offset points',
+        fontsize=9,
+        weight='bold',
+        arrowprops=dict(arrowstyle='-', lw=0.4)
+    )
+
+plt.axhline(0, color='gray', linewidth=1, linestyle='--')
+plt.title("Daily Instagram Followers Change")
+plt.xlabel("Days since first observation")
+plt.ylabel("Daily Follower Change")
+plt.tight_layout()
+plt.show()
+
+
+#%%
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+df = tt_pre12_clean.copy()
+df['date'] = pd.to_datetime(df['date'])
+
+# Align all artists by their own start date
+df['days_since_start'] = (
+    df.groupby('song_id')['date']
+      .transform(lambda d: (d - d.min()).dt.days)
+)
+
+# Select top N unique points
+N = 20
+topN = (
+    df[['song_id','days_since_start','tt_followers_diff_daily']]
+    .sort_values('tt_followers_diff_daily', ascending=False)
+    .head(N)
+)
+
+# Hardcoded circular-ish offsets for up to 20 labels
+offsets = [
+    (14, 0), (11, 8), (4, 13), (-4, 13), (-95, 11),
+    (-45, 11), (-11, -8), (-4, -13), (4, -13), (-9, 8),
+    (18, 0), (14, 12), (0, 18), (-14, 12), (-18, 0),
+    (-14, -12), (0, -18), (14, -12), (20, 0), (-20, 0)
+][:N]
+
+plt.figure(figsize=(12, 6))
+
+# Plot all artists
+for song_id, group in df.groupby('song_id'):
+    group = group.sort_values('days_since_start')
+    plt.plot(
+        group['days_since_start'],
+        group['tt_followers_diff_daily'],
+        alpha=0.4
+    )
+
+seen_points = set()
+seen_songs = set()
+label_i = 0   # only increments when a label is used
+
+for _, row in topN.iterrows():
+    song = row['song_id']
+    x = row['days_since_start']
+    y = row['tt_followers_diff_daily']
+
+    # skip if we already used this song_id
+    if song in seen_songs:
+        continue
+
+    # skip if we already used this exact (x,y)
+    if (x, y) in seen_points:
+        continue
+
+    # record uniqueness
+    seen_songs.add(song)
+    seen_points.add((x, y))
+
+    # get next available offset
+    dx, dy = offsets[label_i]
+    label_i += 1
+
+    plt.annotate(
+        song,
+        xy=(x, y),
+        xytext=(dx, dy),
+        textcoords='offset points',
+        fontsize=9,
+        weight='bold',
+        arrowprops=dict(arrowstyle='-', lw=0.4)
+    )
+
+plt.axhline(0, color='gray', linewidth=1, linestyle='--')
+plt.title("Daily TikTok Followers Change")
+plt.xlabel("Days since first observation")
+plt.ylabel("Daily Follower Change")
+plt.tight_layout()
+plt.show()
+
+#%%
+
+song = "Signs — Tate McRae"
+
+sub = tt_pre12_clean[tt_pre12_clean["song_id"] == song].sort_values("date")
+
+plt.figure(figsize=(10, 4))
+plt.plot(sub["date"], sub["followers"], marker="o")
+plt.title(f"TikTok Followers Over Time: {song}")
+plt.xlabel("Date")
+plt.ylabel("Followers")
+plt.tight_layout()
+plt.show()
+
+#%%
+
+import numpy as np
+import pandas as pd
+from sklearn.decomposition import PCA
+
+df = tt_pre12_clean.sort_values(["song_id", "date"]).copy()
+df["date"] = pd.to_datetime(df["date"])
+
+df["followers_diff"] = df.groupby("song_id")["followers_interp"].diff()
+
+window = 14       
+
+X = []            
+meta = []         
+
+for sid, sub in df.groupby("song_id"):
+    d = sub[["date", "followers_diff"]].copy()
+    v = d["followers_diff"].values
+
+    # build windows of length = window
+    for i in range(len(v) - window):
+        segment = v[i : i + window]
+
+        if np.isfinite(segment).all():
+            X.append(segment)
+            meta.append((sid, d.iloc[i + window]["date"]))
+
+X = np.vstack(X)
+
+pca = PCA(n_components=3)
+Z = pca.fit_transform(X)
+
+scores = Z[:, 0]
+
+q1 = np.percentile(scores, 25)
+q3 = np.percentile(scores, 75)
+iqr = q3 - q1
+
+k = 1.5                    
+threshold = q1 - k * iqr  
+
+dip_flags = scores < threshold
+
+outliers = []
+
+for (sid, dt), flag in zip(meta, dip_flags):
+    if flag:
+        outliers.append((sid, dt))
+
+outlier_df = pd.DataFrame(outliers, columns=["song_id", "date"])
+
+df = df.merge(
+    outlier_df.assign(is_pca_dip=True),
+    on=["song_id", "date"],
+    how="left"
+)
+
+df["is_pca_dip"] = df["is_pca_dip"].fillna(False)
+
+#%%
+
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+
+# pick a song that has at least one PCA dip
+song = df.loc[df["is_pca_dip"], "song_id"].sample(1).iloc[0]
+
+d = df[df["song_id"] == song].sort_values("date")
+
+fig, axes = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
+
+# 1. Followers time-series
+axes[0].plot(d["date"], d["followers_interp"], linewidth=2)
+axes[0].scatter(
+    d.loc[d["is_pca_dip"], "date"],
+    d.loc[d["is_pca_dip"], "followers_interp"],
+    s=60,
+    color="red",
+    label="PCA Dip"
+)
+axes[0].set_title(f"Followers with PCA Dip Flags ({song})")
+axes[0].legend()
+
+# 2. Daily diffs time-series
+axes[1].plot(d["date"], d["followers_diff"], linewidth=1.5)
+axes[1].scatter(
+    d.loc[d["is_pca_dip"], "date"],
+    d.loc[d["is_pca_dip"], "followers_diff"],
+    s=60,
+    color="red"
+)
+axes[1].set_title("Daily Follower Diffs with Dip Flags")
+
+axes[1].xaxis.set_major_locator(mdates.MonthLocator())
+axes[1].xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+plt.setp(axes[1].get_xticklabels(), rotation=45, ha="right")
+
+plt.tight_layout()
+plt.show()

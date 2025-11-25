@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import re
 import os
 import numpy as np
@@ -107,6 +108,78 @@ def plot_two_metrics_artist(
             )
             plt.savefig(f"{outdir}/{filename}", dpi=dpi)
             plt.close(fig)
+
+def plot_one_metric_song(
+    df,
+    metric="subs",
+    artists=None,
+    artist_col="artist",
+    song_col="song_id",
+    platform_col="platform",
+    date_col="date",
+    release_col="release_date",
+    outdir="graphs",
+    filename_pattern="{metric}_{artist}_{song}_{platform}.png",
+    dpi=150,
+    show=False,
+):
+    """
+    Plot one metric over time for each (artist, song_id, platform) group.
+    """
+    import os
+    import re
+    import matplotlib.pyplot as plt
+
+    if artists is not None:
+        df = df[df[artist_col].isin(artists)]
+
+    os.makedirs(outdir, exist_ok=True)
+
+    for (artist, song, platform), g in df.groupby([artist_col, song_col, platform_col]):
+        g = g.sort_values(date_col)
+
+        g[date_col] = pd.to_datetime(g[date_col], errors="coerce")
+        g[release_col] = pd.to_datetime(g[release_col], errors="coerce")
+
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.plot(
+            g[date_col],
+            g[metric],
+            label=metric
+        )
+
+        ax.set_xlabel(date_col)
+        ax.set_ylabel(metric)
+
+        rd = g[release_col].iloc[0]
+        ax.axvline(rd, linestyle=":", linewidth=1)
+
+        ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+        plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
+
+        fig.autofmt_xdate()
+
+        ax.legend(loc="upper left")
+        plt.tight_layout()
+
+        if show:
+            plt.show()
+        else:
+            safe_artist = re.sub(r'[\\/*?:"<>|]', "_", str(artist))
+            safe_song = re.sub(r'[\\/*?:"<>|]', "_", str(song))
+            safe_platform = re.sub(r'[\\/*?:"<>|]', "_", str(platform))
+
+            filename = filename_pattern.format(
+                metric=metric,
+                artist=safe_artist,
+                song=safe_song,
+                platform=safe_platform
+            )
+
+            plt.savefig(os.path.join(outdir, filename), dpi=dpi)
+            plt.close(fig)
+
 
 def plot_two_metrics_song(
     df,

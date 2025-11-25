@@ -1,4 +1,64 @@
 """
+Before any feature engineering, let's make sure to split our data, keeping in mind that artists should not
+be found in both train and test...
+
+groupkfold with k = 10 might be best option for cross-validation...
+"""
+#%%
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
+#%%
+
+songs = pd.read_csv('data/processed_data/songs.csv')
+
+#%%
+"""
+It is important to note that since many artists have several songs released on same day (album)
+The social media features will be the exact same across all those songs, since the data is at the profile-level
+Because of this, we can split train and test by ensuring that songs from the same artist are only found in one split
+"""
+
+from sklearn.model_selection import GroupShuffleSplit
+
+splitter = GroupShuffleSplit(test_size=0.2, n_splits=1, random_state=42)
+train_idx, test_idx = next(splitter.split(songs, groups=songs['artist']))
+
+train = songs.iloc[train_idx]
+test = songs.iloc[test_idx]
+
+#%%
+
+"""
+Ok, we finally have our train-test-split!
+
+Now, we can do cross validation on train dataset...
+
+Do more research on groupkfold
+
+"""
+
+#%%
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# weeks on chart plot across all songs, solo songs, and collab songs
+plt.figure(figsize=(12,6))
+sns.histplot(train["lifespan"], bins=30, kde=True, edgecolor="black")
+plt.title("How Long Songs Stay on the Billboard Hot 100 (2022–2025)")
+plt.xlabel("Weeks on Chart")
+plt.ylabel("Frequency")
+plt.show()
+
+#%%
+
+train['lifespan'].mean(), train['lifespan'].var()
+
+#%%
+
+"""
 Now we can begin calculating features around social data...
 
 Release Date features:
@@ -12,8 +72,6 @@ Growth Rate features:
 - Compute weekly growth rate for Followers / Subscribers (4 weeks prior release)
 - Compute weekly growth rate for Likes / Views (4 weeks prior release)
 """
-
-songs['lifespan'].mean(), songs['lifespan'].var()
 
 #%%
 # We can start by making a new column in each of our pre4_df's for release date values
@@ -33,10 +91,6 @@ feature_df = feature_df.merge(
 
 #%%
 
-yt_pre12_clean.drop(columns=["views_zero_proxy_missing", "subs_zero_proxy_missing"], inplace=True)
-
-#%%
-
 # TT: followers, uploads, likes
 release_rows = tt_pre12_clean[tt_pre12_clean["date"] == tt_pre12_clean["release_date"]][
     ["song_id", "release_date", "followers", "uploads", "likes"]
@@ -50,10 +104,6 @@ feature_df = feature_df.merge(
 
 #%%
 
-tt_pre12_clean.drop(columns=["followers_zero_proxy_missing", "uploads_zero_proxy_missing", "likes_zero_proxy_missing"], inplace=True)
-
-#%%
-
 # IG: followers, media
 release_rows = ig_pre12_clean[ig_pre12_clean["date"] == ig_pre12_clean["release_date"]][
     ["song_id", "release_date", "followers", "media"]
@@ -64,10 +114,6 @@ feature_df = feature_df.merge(
     on=["song_id", "release_date"],
     how="left"
 )
-
-#%%
-
-ig_pre12_clean.drop(columns=["followers_zero_proxy_missing", "media_zero_proxy_missing"], inplace=True)
 
 #%%
 """
