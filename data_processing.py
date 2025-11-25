@@ -955,6 +955,7 @@ ROUNDING_RULES = {
 }
 
 def display_value(x, field):
+    
     rules = ROUNDING_RULES[field]
     for upper, unit in rules:
         if x < upper:
@@ -963,16 +964,8 @@ def display_value(x, field):
             return (x // unit) * unit
     return x
 
-# def keep_threshold_crossings(series, field):
-#     keep = []
-#     prev_display = None
-    
-#     for x in series:
-#         dv = display_value(x, field)
-#         keep.append(dv != prev_display)
-#         prev_display = dv
-
 def keep_threshold_crossings(series, field):
+
     dv = np.array([display_value(x, field) for x in series])
     n = len(dv)
 
@@ -981,15 +974,14 @@ def keep_threshold_crossings(series, field):
     i = 0
     while i < n:
         j = i
-        # find plateau end
+
+        # iterate until we hit a point which is different from i
         while j + 1 < n and dv[j+1] == dv[i]:
             j += 1
 
         prev = dv[i-1] if i > 0 else None
         curr = dv[i]
         next_ = dv[j+1] if j+1 < n else None
-
-        # evaluate cases
 
         # Case 1: monotonically increasing
         if prev is not None and prev < curr and (next_ is None or next_ > curr):
@@ -999,20 +991,23 @@ def keep_threshold_crossings(series, field):
         if prev is not None and prev > curr and (next_ is None or next_ < curr):
             keep[j] = True   # right
 
-        # Case 3: up → flat → down
+        # Case 3: up, flat, down
         if prev is not None and prev < curr and next_ is not None and next_ < curr:
             keep[i] = True   # left
             keep[j] = True   # right
 
-        # Case 4: down → flat → up
+        # Case 4: down, flat, up
         if prev is not None and prev > curr and next_ is not None and next_ > curr:
-            keep[j] = True   # right
             keep[i] = True   # left
+            keep[j] = True   # right
+            keep[i + 1] = True   # left
+            keep[j - 1] = True   # right
 
-        # If no prev (start), default to keeping plateau edges
+        # If no prev (start)
         if prev is None:
             keep[i] = True
-        # If no next (end), default to keeping plateau edge
+
+        # If no next (end)
         if next_ is None:
             keep[j] = True
 
@@ -1086,7 +1081,7 @@ plt.show()
 
 #%%
 
-# song = tt_pre12_clean.song_id.sample().iloc[0]
+song = tt_pre12_clean.song_id.sample().iloc[0]
 
 d = tt_pre12_clean[tt_pre12_clean["song_id"] == song].sort_values("date")
 d["date"] = pd.to_datetime(d["date"])
@@ -1125,11 +1120,23 @@ def interpolate_metric(df, value_col, keep_col):
         idx = sub.index
         t = sub["t"].values
         y = sub[value_col].astype(float).values
+        keep = sub[keep_col].values.copy()
 
-        # identify the first real (non-NaN) raw value
-        first_valid_idx = np.where(np.isfinite(y))[0][0]
+        keep[0] = True
 
-        mask = sub[keep_col].values & np.isfinite(y)
+        valid_mask = np.isfinite(y) & (y != 0)
+        if valid_mask.any():
+            first_nonzero = np.where(valid_mask)[0][0]
+            keep[first_nonzero] = True
+
+        # identify first non-NaN raw value
+        first_valid_idx = None
+        finite_mask = np.isfinite(y)
+        if finite_mask.any():
+            first_valid_idx = np.where(finite_mask)[0][0]
+
+        # compute keep mask
+        mask = keep & finite_mask
 
         t_keep = t[mask]
         y_keep = y[mask]
@@ -1145,7 +1152,7 @@ def interpolate_metric(df, value_col, keep_col):
         base[0] = y_keep[0]
         base[t < t_keep[0]] = y_keep[0]
 
-        # enforce raw-first rule: NO values before first real data point
+        # no vals before first real data point
         base[:first_valid_idx] = np.nan
 
         # forward-fill after last keep point
@@ -1161,55 +1168,6 @@ tt_pre12_clean = interpolate_metric(tt_pre12_clean, "likes", "likes_keep")
 
 yt_pre12_clean = interpolate_metric(yt_pre12_clean, "subs", "subs_keep")
 yt_pre12_clean = interpolate_metric(yt_pre12_clean, "views", "views_keep")
-
-#%%
-
-song = tt_pre12_clean.song_id.sample().iloc[0]
-
-d = tt_pre12_clean[tt_pre12_clean["song_id"] == song].sort_values("date")
-d["date"] = pd.to_datetime(d["date"])
-
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-
-fig, axes = plt.subplots(4, 1, figsize=(14, 12), sharex=True)
-
-# 1. Raw followers
-axes[0].plot(d["date"], d["followers"], color="gray", linewidth=1)
-axes[0].scatter(
-    d.loc[d["followers_keep"], "date"],
-    d.loc[d["followers_keep"], "followers"],
-    s=15, 
-    alpha=0.2
-)
-axes[0].set_title(f"Raw TikTok Followers ({song})")
-
-# 2. Interpolated followers
-axes[1].plot(d["date"], d["followers_interp"], linewidth=2)
-axes[1].set_title("Interpolated TikTok Followers")
-
-# 3. Raw likes
-axes[2].plot(d["date"], d["likes"], color="gray", linewidth=1)
-axes[2].scatter(
-    d.loc[d["likes_keep"], "date"],
-    d.loc[d["likes_keep"], "likes"],
-    s=15, 
-    alpha=0.2
-)
-axes[2].set_title("Raw TikTok Likes")
-
-# 4. Interpolated likes
-axes[3].plot(d["date"], d["likes_interp"], linewidth=2)
-axes[3].set_title("Interpolated TikTok Likes")
-
-axes[3].xaxis.set_major_locator(mdates.MonthLocator())
-axes[3].xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
-plt.setp(axes[3].get_xticklabels(), rotation=45, ha="right")
-
-plt.tight_layout()
-plt.show()
-
-sum(d['followers'].notnull()), sum(d['followers_interp'].notnull())
 
 #%%
 """
@@ -1259,6 +1217,9 @@ yt_pre12_clean['yt_views_diff_daily'] = (
 )
 
 #%%
+"""
+IG FOLLOWERS
+"""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -1341,6 +1302,10 @@ plt.show()
 
 
 #%%
+"""
+TT FOLLOWERS
+"""
+
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -1355,16 +1320,16 @@ df['days_since_start'] = (
 )
 
 # Select top N unique points
-N = 20
+N = 8
 topN = (
     df[['song_id','days_since_start','tt_followers_diff_daily']]
-    .sort_values('tt_followers_diff_daily', ascending=False)
+    .sort_values('tt_followers_diff_daily', ascending=True)
     .head(N)
 )
 
 # Hardcoded circular-ish offsets for up to 20 labels
 offsets = [
-    (14, 0), (11, 8), (4, 13), (-4, 13), (-95, 11),
+    (14, 0), (11, 8), (4, 13), (-90, 50), (-95, 11),
     (-45, 11), (-11, -8), (-4, -13), (4, -13), (-9, 8),
     (18, 0), (14, 12), (0, 18), (-14, 12), (-18, 0),
     (-14, -12), (0, -18), (14, -12), (20, 0), (-20, 0)
@@ -1424,116 +1389,252 @@ plt.tight_layout()
 plt.show()
 
 #%%
-
-song = "Signs — Tate McRae"
-
-sub = tt_pre12_clean[tt_pre12_clean["song_id"] == song].sort_values("date")
-
-plt.figure(figsize=(10, 4))
-plt.plot(sub["date"], sub["followers"], marker="o")
-plt.title(f"TikTok Followers Over Time: {song}")
-plt.xlabel("Date")
-plt.ylabel("Followers")
-plt.tight_layout()
-plt.show()
-
-#%%
+"""
+TT LIKES
+"""
 
 import numpy as np
-import pandas as pd
-from sklearn.decomposition import PCA
-
-df = tt_pre12_clean.sort_values(["song_id", "date"]).copy()
-df["date"] = pd.to_datetime(df["date"])
-
-df["followers_diff"] = df.groupby("song_id")["followers_interp"].diff()
-
-window = 14       
-
-X = []            
-meta = []         
-
-for sid, sub in df.groupby("song_id"):
-    d = sub[["date", "followers_diff"]].copy()
-    v = d["followers_diff"].values
-
-    # build windows of length = window
-    for i in range(len(v) - window):
-        segment = v[i : i + window]
-
-        if np.isfinite(segment).all():
-            X.append(segment)
-            meta.append((sid, d.iloc[i + window]["date"]))
-
-X = np.vstack(X)
-
-pca = PCA(n_components=3)
-Z = pca.fit_transform(X)
-
-scores = Z[:, 0]
-
-q1 = np.percentile(scores, 25)
-q3 = np.percentile(scores, 75)
-iqr = q3 - q1
-
-k = 1.5                    
-threshold = q1 - k * iqr  
-
-dip_flags = scores < threshold
-
-outliers = []
-
-for (sid, dt), flag in zip(meta, dip_flags):
-    if flag:
-        outliers.append((sid, dt))
-
-outlier_df = pd.DataFrame(outliers, columns=["song_id", "date"])
-
-df = df.merge(
-    outlier_df.assign(is_pca_dip=True),
-    on=["song_id", "date"],
-    how="left"
-)
-
-df["is_pca_dip"] = df["is_pca_dip"].fillna(False)
-
-#%%
-
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 
-# pick a song that has at least one PCA dip
-song = df.loc[df["is_pca_dip"], "song_id"].sample(1).iloc[0]
+df = tt_pre12_clean.copy()
+df['date'] = pd.to_datetime(df['date'])
 
-d = df[df["song_id"] == song].sort_values("date")
-
-fig, axes = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
-
-# 1. Followers time-series
-axes[0].plot(d["date"], d["followers_interp"], linewidth=2)
-axes[0].scatter(
-    d.loc[d["is_pca_dip"], "date"],
-    d.loc[d["is_pca_dip"], "followers_interp"],
-    s=60,
-    color="red",
-    label="PCA Dip"
+# Align all artists by their own start date
+df['days_since_start'] = (
+    df.groupby('song_id')['date']
+      .transform(lambda d: (d - d.min()).dt.days)
 )
-axes[0].set_title(f"Followers with PCA Dip Flags ({song})")
-axes[0].legend()
 
-# 2. Daily diffs time-series
-axes[1].plot(d["date"], d["followers_diff"], linewidth=1.5)
-axes[1].scatter(
-    d.loc[d["is_pca_dip"], "date"],
-    d.loc[d["is_pca_dip"], "followers_diff"],
-    s=60,
-    color="red"
+# Select top N unique points
+N = 5
+topN = (
+    df[['song_id','days_since_start','tt_likes_diff_daily']]
+    .sort_values('tt_likes_diff_daily', ascending=True)
+    .head(N)
 )
-axes[1].set_title("Daily Follower Diffs with Dip Flags")
 
-axes[1].xaxis.set_major_locator(mdates.MonthLocator())
-axes[1].xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
-plt.setp(axes[1].get_xticklabels(), rotation=45, ha="right")
+# Hardcoded circular-ish offsets for labels
+offsets = [
+    (14, 0), (-130, 40), (-150, 13), (4, 13), (-95, 11),
+    (-45, 11), (-11, -8), (-4, -13), (4, -13), (-9, 8),
+    (18, 0), (14, 12), (0, 18), (-14, 12), (-18, 0),
+    (-14, -12), (0, -18), (14, -12), (20, 0), (-20, 0)
+][:N]
 
+plt.figure(figsize=(12, 6))
+
+# Plot all artists
+for song_id, group in df.groupby('song_id'):
+    group = group.sort_values('days_since_start')
+    plt.plot(
+        group['days_since_start'],
+        group['tt_likes_diff_daily'],
+        alpha=0.4
+    )
+
+seen_points = set()
+seen_songs = set()
+label_i = 0
+
+# Annotate top-N unique highest increases
+for _, row in topN.iterrows():
+    song = row['song_id']
+    x = row['days_since_start']
+    y = row['tt_likes_diff_daily']
+
+    if song in seen_songs:
+        continue
+
+    if (x, y) in seen_points:
+        continue
+
+    seen_songs.add(song)
+    seen_points.add((x, y))
+
+    dx, dy = offsets[label_i]
+    label_i += 1
+
+    plt.annotate(
+        song,
+        xy=(x, y),
+        xytext=(dx, dy),
+        textcoords='offset points',
+        fontsize=9,
+        weight='bold',
+        arrowprops=dict(arrowstyle='-', lw=0.4)
+    )
+
+plt.axhline(0, color='gray', linewidth=1, linestyle='--')
+plt.title("Daily TikTok Likes Change")
+plt.xlabel("Days since first observation")
+plt.ylabel("Daily Likes Change")
 plt.tight_layout()
 plt.show()
+
+# %%
+"""
+YT VIEWS
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+df = yt_pre12_clean.copy()
+df['date'] = pd.to_datetime(df['date'])
+
+# Align each song by its own starting date
+df['days_since_start'] = (
+    df.groupby('song_id')['date']
+      .transform(lambda d: (d - d.min()).dt.days)
+)
+
+# Select top N largest negative dips
+N = 15
+topN = (
+    df[['song_id','days_since_start','yt_views_diff_daily']]
+    .sort_values('yt_views_diff_daily', ascending=True)
+    .head(N)
+)
+
+# Hardcoded offsets for labeling
+offsets = [
+    (14, 0), (-130, 40), (-150, 13), (4, 13), (-95, 11),
+    (-45, 11), (-11, -8), (-4, -13), (4, -13), (-9, 8),
+    (18, 0), (14, 12), (0, 18), (-14, 12), (-18, 0),
+    (-14, -12), (0, -18), (14, -12), (20, 0), (-20, 0)
+][:N]
+
+plt.figure(figsize=(12, 6))
+
+# Plot all artists
+for song_id, group in df.groupby('song_id'):
+    group = group.sort_values('days_since_start')
+    plt.plot(
+        group['days_since_start'],
+        group['yt_views_diff_daily'],
+        alpha=0.4
+    )
+
+seen_points = set()
+seen_songs = set()
+label_i = 0
+
+# Annotate bottom-N dips
+for _, row in topN.iterrows():
+    song = row['song_id']
+    x = row['days_since_start']
+    y = row['yt_views_diff_daily']
+
+    if song in seen_songs:
+        continue
+
+    if (x, y) in seen_points:
+        continue
+
+    seen_songs.add(song)
+    seen_points.add((x, y))
+
+    dx, dy = offsets[label_i]
+    label_i += 1
+
+    plt.annotate(
+        song,
+        xy=(x, y),
+        xytext=(dx, dy),
+        textcoords='offset points',
+        fontsize=9,
+        weight='bold',
+        arrowprops=dict(arrowstyle='-', lw=0.4)
+    )
+
+plt.axhline(0, color='gray', linewidth=1, linestyle='--')
+plt.title("Daily YouTube Views Change")
+plt.xlabel("Days since first observation")
+plt.ylabel("Daily Views Change")
+plt.tight_layout()
+plt.show()
+
+#%%
+"""
+YT SUBS
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+df = yt_pre12_clean.copy()
+df['date'] = pd.to_datetime(df['date'])
+
+# Align each song by its own starting date
+df['days_since_start'] = (
+    df.groupby('song_id')['date']
+      .transform(lambda d: (d - d.min()).dt.days)
+)
+
+# Select top N largest negative dips
+N = 20
+topN = (
+    df[['song_id','days_since_start','yt_subs_diff_daily']]
+    .sort_values('yt_subs_diff_daily', ascending=True)
+    .head(N)
+)
+
+# Hardcoded offsets for labeling
+offsets = [
+    (14, 0), (-130, 40), (-150, 13), (4, 13), (-95, 11),
+    (-45, 11), (-11, -8), (-4, -13), (4, -13), (-9, 8),
+    (18, 0), (14, 12), (0, 18), (-14, 12), (-18, 0),
+    (-14, -12), (0, -18), (14, -12), (20, 0), (-20, 0)
+][:N]
+
+plt.figure(figsize=(12, 6))
+
+# Plot all artists
+for song_id, group in df.groupby('song_id'):
+    group = group.sort_values('days_since_start')
+    plt.plot(
+        group['days_since_start'],
+        group['yt_subs_diff_daily'],
+        alpha=0.4
+    )
+
+seen_points = set()
+seen_songs = set()
+label_i = 0
+
+# Annotate bottom-N dips
+for _, row in topN.iterrows():
+    song = row['song_id']
+    x = row['days_since_start']
+    y = row['yt_subs_diff_daily']
+
+    if song in seen_songs:
+        continue
+
+    if (x, y) in seen_points:
+        continue
+
+    seen_songs.add(song)
+    seen_points.add((x, y))
+
+    dx, dy = offsets[label_i]
+    label_i += 1
+
+    plt.annotate(
+        song,
+        xy=(x, y),
+        xytext=(dx, dy),
+        textcoords='offset points',
+        fontsize=9,
+        weight='bold',
+        arrowprops=dict(arrowstyle='-', lw=0.4)
+    )
+
+plt.axhline(0, color='gray', linewidth=1, linestyle='--')
+plt.title("Daily YouTube Subscribers Change")
+plt.xlabel("Days since first observation")
+plt.ylabel("Daily Subscribers Change")
+plt.tight_layout()
+plt.show()
+
+#%%
