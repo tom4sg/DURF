@@ -62,6 +62,7 @@ using a feature representing the artists social media engagement prior to the so
 """
 
 #%%
+
 import pandas as pd
 import os
 
@@ -75,9 +76,9 @@ for year in years:
 
     file_count = 0
     
-    for file in os.listdir(f"data/raw_data/hot_100/{year}"):
+    for file in os.listdir(f"data/raw_data_collection_08_23_25/hot_100/{year}"):
 
-        total_hot_100 = pd.concat([total_hot_100, pd.read_csv(f"data/raw_data/hot_100/{year}/{file}")])
+        total_hot_100 = pd.concat([total_hot_100, pd.read_csv(f"data/raw_data_collection_08_23_25/hot_100/{year}/{file}")])
         file_count += 1
         
     print(f"Added {file_count} files to hot_100 from {year}")
@@ -459,10 +460,7 @@ genre_df = pd.DataFrame(
     index=songs.index
 )
 
-#%%
-
 songs = pd.concat([songs.drop(columns='genres'), genre_df], axis=1)
-songs
 
 #%%
 
@@ -473,15 +471,15 @@ Ok, now, we do / compute the following before the train test split
 
 #%%
 
-instagram = pd.read_csv("data/raw_data/social_archives/instagram_archive.csv")
+instagram = pd.read_csv("data/raw_data_collection_08_23_25/social_archives/instagram_archive.csv")
 instagram["date"] = pd.to_datetime(instagram["date"])
 instagram.drop(columns=["Unnamed: 0"], inplace=True)
 
-tiktok = pd.read_csv("data/raw_data/social_archives/tiktok_archive.csv")
+tiktok = pd.read_csv("data/raw_data_collection_08_23_25/social_archives/tiktok_archive.csv")
 tiktok["date"] = pd.to_datetime(tiktok["date"])
 tiktok.drop(columns=["Unnamed: 0"], inplace=True)
 
-youtube = pd.read_csv("data/raw_data/social_archives/youtube_archive.csv")
+youtube = pd.read_csv("data/raw_data_collection_08_23_25/social_archives/youtube_archive.csv")
 youtube["date"] = pd.to_datetime(youtube["date"])
 youtube.drop(columns=["Unnamed: 0"], inplace=True)
 
@@ -695,6 +693,7 @@ df.loc[zero_followers_missing, "followers"] = np.nan
 
 grp_interp = ["song_id", "platform"]
 df["followers"] = df.groupby(grp_interp)["followers"].transform(lambda s: s.ffill())
+df["media"] = df.groupby(grp_interp)["media"].transform(lambda s: s.ffill())
 
 ig_pre12_clean = df
 
@@ -809,6 +808,7 @@ df.loc[zero_likes_missing, "likes"] = np.nan
 grp_interp = ["song_id", "platform"]
 df["followers"] = df.groupby(grp_interp)["followers"].transform(lambda s: s.ffill())
 df["likes"]  = df.groupby(grp_interp)["likes"].transform(lambda s: s.ffill())
+df["uploads"]  = df.groupby(grp_interp)["uploads"].transform(lambda s: s.ffill())
 
 tt_pre12_clean = df
 
@@ -841,12 +841,58 @@ songs.to_csv("data/processed_data/songs.csv", index=False)
 
 #%%
 
+# 2-week post-release social data extract
+# Captures the social engagement spike in the 14 days immediately after release.
+# Songs released within 14 days of the scrape date will have partial windows — that's expected.
+
+POST_RELEASE_DAYS = 14
+
+ig_post2w_mask = (
+    (instagram["date"] > instagram["release_date"]) &
+    (instagram["date"] <= instagram["release_date"] + pd.Timedelta(days=POST_RELEASE_DAYS))
+)
+ig_post2w = (
+    instagram.loc[ig_post2w_mask, ["artist", "song_id", "platform", "date", "release_date", "followers", "following", "media"]]
+    .sort_values(["artist", "song_id", "date"])
+    .reset_index(drop=True)
+)
+
+tt_post2w_mask = (
+    (tiktok["date"] > tiktok["release_date"]) &
+    (tiktok["date"] <= tiktok["release_date"] + pd.Timedelta(days=POST_RELEASE_DAYS))
+)
+tt_post2w = (
+    tiktok.loc[tt_post2w_mask, ["artist", "song_id", "platform", "date", "release_date", "followers", "following", "uploads", "likes"]]
+    .sort_values(["artist", "song_id", "date"])
+    .reset_index(drop=True)
+)
+
+yt_post2w_mask = (
+    (youtube["date"] > youtube["release_date"]) &
+    (youtube["date"] <= youtube["release_date"] + pd.Timedelta(days=POST_RELEASE_DAYS))
+)
+yt_post2w = (
+    youtube.loc[yt_post2w_mask, ["artist", "song_id", "platform", "date", "release_date", "subs", "views"]]
+    .sort_values(["artist", "song_id", "date"])
+    .reset_index(drop=True)
+)
+
+ig_post2w.to_csv("data/processed_data/2w_ig_post_release.csv", index=False)
+tt_post2w.to_csv("data/processed_data/2w_tt_post_release.csv", index=False)
+yt_post2w.to_csv("data/processed_data/2w_yt_post_release.csv", index=False)
+
+#%%
+
 import pandas as pd
 import matplotlib.pyplot as plt
 
 ig_pre12_clean = pd.read_csv('data/processed_data/12m_ig_pre_release.csv')
 tt_pre12_clean = pd.read_csv('data/processed_data/12m_tt_pre_release.csv')
 yt_pre12_clean = pd.read_csv('data/processed_data/12m_yt_pre_release.csv')
+
+ig_post2w = pd.read_csv("data/processed_data/2w_ig_post_release.csv")
+tt_post2w = pd.read_csv("data/processed_data/2w_tt_post_release.csv")
+yt_post2w = pd.read_csv("data/processed_data/2w_yt_post_release.csv")
 
 #%%
 
@@ -896,78 +942,80 @@ the view values are being scraped, and because of this, there are still places t
 
 #%%
 
-ROUNDING_RULES = {
-    "yt_subs": [
-        (1_000,        1),
-        (10_000,       10),
-        (100_000,      100),
-        (1_000_000,    1_000),
-        (10_000_000,   10_000),
-        (100_000_000,  100_000),
-        (1_000_000_000, None),
-        (10_000_000_000, None),
-        (100_000_000_000, None),
-    ],
-    "yt_views": [
-        (1_000,        1),
-        (10_000,       1),
-        (100_000,      1),
-        (1_000_000,    1),
-        (10_000_000,   1),
-        (100_000_000,  1),
-        (1_000_000_000, None),
-        (10_000_000_000, None),
-        (100_000_000_000, None),
-    ],
-    "tt_followers": [
-        (1_000,        1),
-        (10_000,       1),
-        (100_000,      100),
-        (1_000_000,    100),
-        (10_000_000,   100_000),
-        (100_000_000,  100_000),
-        (1_000_000_000, None),
-        (10_000_000_000, None),
-        (100_000_000_000, None),
-    ],
-    "tt_likes": [
-        (1_000,        1),
-        (10_000,       1),
-        (100_000,      100),
-        (1_000_000,    100),
-        (10_000_000,   100_000),
-        (100_000_000,  100_000),
-        (1_000_000_000, 100_000),
-        (10_000_000_000, 100_000_000),
-        (100_000_000_000, None),
-    ],
-    "ig_followers": [
-        (1_000,        1),
-        (10_000,       1),
-        (100_000,      1),
-        (1_000_000,    1),
-        (10_000_000,   1),
-        (100_000_000,  1),
-        (1_000_000_000, 1),
-        (10_000_000_000, None),
-        (100_000_000_000, None),
-    ],
-}
+# ROUNDING_RULES = {
+#     "yt_subs": [
+#         (1_000,        1),
+#         (10_000,       10),
+#         (100_000,      100),
+#         (1_000_000,    1_000),
+#         (10_000_000,   10_000),
+#         (100_000_000,  100_000),
+#         (1_000_000_000, None),
+#         (10_000_000_000, None),
+#         (100_000_000_000, None),
+#     ],
+#     "yt_views": [
+#         (1_000,        1),
+#         (10_000,       1),
+#         (100_000,      1),
+#         (1_000_000,    1),
+#         (10_000_000,   1),
+#         (100_000_000,  1),
+#         (1_000_000_000, None),
+#         (10_000_000_000, None),
+#         (100_000_000_000, None),
+#     ],
+#     "tt_followers": [
+#         (1_000,        1),
+#         (10_000,       1),
+#         (100_000,      100),
+#         (1_000_000,    100),
+#         (10_000_000,   100_000),
+#         (100_000_000,  100_000),
+#         (1_000_000_000, None),
+#         (10_000_000_000, None),
+#         (100_000_000_000, None),
+#     ],
+#     "tt_likes": [
+#         (1_000,        1),
+#         (10_000,       1),
+#         (100_000,      100),
+#         (1_000_000,    100),
+#         (10_000_000,   100_000),
+#         (100_000_000,  100_000),
+#         (1_000_000_000, 100_000),
+#         (10_000_000_000, 100_000_000),
+#         (100_000_000_000, None),
+#     ],
+#     "ig_followers": [
+#         (1_000,        1),
+#         (10_000,       1),
+#         (100_000,      1),
+#         (1_000_000,    1),
+#         (10_000_000,   1),
+#         (100_000_000,  1),
+#         (1_000_000_000, 1),
+#         (10_000_000_000, None),
+#         (100_000_000_000, None),
+#     ],
+# }
 
-def display_value(x, field):
-    
-    rules = ROUNDING_RULES[field]
-    for upper, unit in rules:
-        if x < upper:
-            if unit is None:
-                return x
-            return (x // unit) * unit
-    return x
+# def display_value(x, field):
 
-def keep_threshold_crossings(series, field):
+#     rules = ROUNDING_RULES[field]
+#     for upper, unit in rules:
+#         if x < upper:
+#             if unit is None:
+#                 return x
+#             return (x // unit) * unit
+#     return x
 
-    dv = np.array([display_value(x, field) for x in series])
-    n = len(dv)
+#%%
+
+def keep_level_crossings(series, field):
+
+    d = np.array(series)
+    n = len(d)
 
     keep = np.zeros(n, dtype=bool)
 
@@ -976,22 +1024,22 @@ def keep_threshold_crossings(series, field):
         j = i
 
         # iterate until we hit a point which is different from i
-        while j + 1 < n and dv[j+1] == dv[i]:
+        while j + 1 < n and d[j+1] == d[i]:
             j += 1
 
-        prev = dv[i-1] if i > 0 else None
-        curr = dv[i]
-        next_ = dv[j+1] if j+1 < n else None
+        prev = d[i-1] if i > 0 else None
+        curr = d[i]
+        next_ = d[j+1] if j+1 < n else None
 
-        # Case 1: monotonically increasing
+        # Case 1: monotonically increasing (AKA if previous level is less and next level is more)
         if prev is not None and prev < curr and (next_ is None or next_ > curr):
             keep[i] = True   # left
 
-        # Case 2: monotonically decreasing
+        # Case 2: monotonically decreasing (AKA if previous level is more and next level is less)
         if prev is not None and prev > curr and (next_ is None or next_ < curr):
             keep[j] = True   # right
 
-        # Case 3: up, flat, down
+        # Case 3: up, flat, down 
         if prev is not None and prev < curr and next_ is not None and next_ < curr:
             keep[i] = True   # left
             keep[j] = True   # right
@@ -1000,6 +1048,10 @@ def keep_threshold_crossings(series, field):
         if prev is not None and prev > curr and next_ is not None and next_ > curr:
             keep[i] = True   # left
             keep[j] = True   # right
+            
+            # if we want middle value instead
+            # keep[(i + j) / 2] = True
+
             keep[i + 1] = True   # left
             keep[j - 1] = True   # right
 
@@ -1017,7 +1069,7 @@ def keep_threshold_crossings(series, field):
 
 def apply_keep_flag(group, col, model_key, out_col):
     g = group.sort_values("date").copy()
-    g[out_col] = keep_threshold_crossings(g[col], model_key)
+    g[out_col] = keep_level_crossings(g[col], model_key)
     return g
 
 #%%
@@ -1055,6 +1107,42 @@ tt_pre12_clean = (
 
 #%%
 
+tt_post2w = (
+    tt_post2w
+    .groupby("song_id", group_keys=False)
+    .apply(lambda g: apply_keep_flag(g, "followers", "tt_followers", "followers_keep"))
+)
+
+tt_post2w = (
+    tt_post2w
+    .groupby("song_id", group_keys=False)
+    .apply(lambda g: apply_keep_flag(g, "likes", "tt_likes", "likes_keep"))
+)
+
+yt_post2w = (
+    yt_post2w
+    .groupby("song_id", group_keys=False)
+    .apply(lambda g: apply_keep_flag(g, "subs", "yt_subs", "subs_keep"))
+)
+
+yt_post2w = (
+    yt_post2w
+    .groupby("song_id", group_keys=False)
+    .apply(lambda g: apply_keep_flag(g, "views", "yt_views", "views_keep"))
+)
+
+#%%
+
+# YOUTUBE VIEWS
+
+'''
+Biggest deviations:
+
+Miami — Morgan Wallen
+I'm A Little Crazy — Morgan Wallen
+Falling Apart — Morgan Wallen
+'''
+
 song = yt_pre12_clean.song_id.sample().iloc[0]
 
 d = yt_pre12_clean[yt_pre12_clean["song_id"] == song].sort_values("date")
@@ -1066,11 +1154,11 @@ fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
 
 axes[0].plot(d["date"], d["subs"], linewidth=1)
 axes[0].scatter(d[d["subs_keep"]]["date"], d[d["subs_keep"]]["subs"], linewidth=2, alpha=0.2)
-axes[0].set_title(f"Youtube Subscribers ({song})")
+axes[0].set_title(f"Youtube Subscribers Raw ({song})")
 
-axes[1].plot(d["date"], d["views"], linewidth=1)
-axes[1].scatter(d[d["views_keep"]]["date"], d[d["views_keep"]]["views"], linewidth=2, alpha=0.2)
-axes[1].set_title(f"Youtube Views ({song})")
+axes[1].plot(d["date"], d["subs_interp"], linewidth=1)
+axes[1].scatter(d[d["subs_keep"]]["date"], d[d["subs_keep"]]["subs"], linewidth=2, alpha=0.2)
+axes[1].set_title(f"Youtube Subscribers Rounded ({song})")
 
 axes[1].xaxis.set_major_locator(mdates.MonthLocator())
 axes[1].xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
@@ -1080,6 +1168,8 @@ plt.tight_layout()
 plt.show()
 
 #%%
+
+# TIKTOK FOLLOWERS
 
 song = tt_pre12_clean.song_id.sample().iloc[0]
 
@@ -1092,11 +1182,11 @@ fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
 
 axes[0].plot(d["date"], d["followers"], linewidth=1)
 axes[0].scatter(d[d["followers_keep"]]["date"], d[d["followers_keep"]]["followers"], linewidth=2, alpha=0.2)
-axes[0].set_title(f"TikTok Followers ({song})")
+axes[0].set_title(f"TikTok Followers Raw ({song})")
 
-axes[1].plot(d["date"], d["likes"], linewidth=1)
-axes[1].scatter(d[d["likes_keep"]]["date"], d[d["likes_keep"]]["likes"], linewidth=2, alpha=0.2)
-axes[1].set_title(f"TikTok Likes ({song})")
+axes[1].plot(d["date"], d["followers_interp"], linewidth=1)
+axes[1].scatter(d[d["followers_keep"]]["date"], d[d["followers_keep"]]["followers"], linewidth=2, alpha=0.2)
+axes[1].set_title(f"TikTok Followers Rounded ({song})")
 
 axes[1].xaxis.set_major_locator(mdates.MonthLocator())
 axes[1].xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
@@ -1104,6 +1194,46 @@ plt.setp(axes[1].get_xticklabels(), rotation=45, ha="right")
 
 plt.tight_layout()
 plt.show()
+
+#%%
+
+# TIKTOK FOLLOWERS
+
+'''
+Biggest deviations:
+
+Mr Electric Blue — Benson Boone
+'''
+
+song = tt_pre12_clean.song_id.sample().iloc[0]
+
+d = tt_pre12_clean[tt_pre12_clean["song_id"] == song].sort_values("date")
+d["date"] = pd.to_datetime(d["date"])
+
+import matplotlib.dates as mdates
+
+fig, axes = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
+
+axes[0].plot(d["date"], d["followers"], linewidth=1)
+axes[0].scatter(d[d["followers_keep"]]["date"], d[d["followers_keep"]]["followers"], linewidth=2, alpha=0.2)
+axes[0].set_title(f"TikTok Followers ({song})")
+
+axes[1].plot(d["date"], d["followers_interp"], linewidth=1)
+axes[1].scatter(d[d["followers_keep"]]["date"], d[d["followers_keep"]]["followers_interp"], linewidth=2, alpha=0.2)
+axes[1].set_title(f"TikTok Followers ({song})")
+
+axes[2].plot(d["date"], d["uploads"], linewidth=1, color="C2")
+axes[2].set_title(f"TikTok uploads ({song})")
+axes[2].xaxis.set_major_locator(mdates.MonthLocator())
+axes[2].xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+plt.setp(axes[2].get_xticklabels(), rotation=45, ha="right")
+
+plt.tight_layout()
+plt.show()
+
+#%%
+
+tt_pre12_clean.columns
 
 #%%
 
@@ -1168,6 +1298,12 @@ tt_pre12_clean = interpolate_metric(tt_pre12_clean, "likes", "likes_keep")
 
 yt_pre12_clean = interpolate_metric(yt_pre12_clean, "subs", "subs_keep")
 yt_pre12_clean = interpolate_metric(yt_pre12_clean, "views", "views_keep")
+
+tt_post2w = interpolate_metric(tt_post2w, "followers", "followers_keep")
+tt_post2w = interpolate_metric(tt_post2w, "likes", "likes_keep")
+
+yt_post2w = interpolate_metric(yt_post2w, "subs", "subs_keep")
+yt_post2w = interpolate_metric(yt_post2w, "views", "views_keep")
 
 #%%
 """
@@ -1636,5 +1772,389 @@ plt.xlabel("Days since first observation")
 plt.ylabel("Daily Subscribers Change")
 plt.tight_layout()
 plt.show()
+
+#%%
+"""
+LET"S SEE IF WE CAN PLOT THE DISTRIBUTIONS OF MAX DEVIATIONS WITHIN EACH SONG PLOT
+"""
+
+mask = (yt_pre12_clean["subs_interp"] > 100_000) & (yt_pre12_clean["subs_interp"] < 1_000_000)
+
+yt_max_dips = (
+    yt_pre12_clean.loc[mask]
+    .groupby("song_id")["yt_views_diff_daily"]
+    .min()
+    .to_frame()
+)
+
+x = yt_max_dips["yt_views_diff_daily"].dropna()
+
+stats = {
+    "Mean": x.mean(),
+    "Median": x.median(),
+    "Std": x.std(),
+    "5th %ile": np.percentile(x, 5),
+    "95th %ile": np.percentile(x, 95),
+}
+
+stats_text = "\n".join(
+    f"{k}: {v:.0f}" for k, v in stats.items()
+)
+
+plt.figure(figsize=(12,6))
+sns.histplot(yt_max_dips["yt_views_diff_daily"], bins=70, edgecolor="black")
+
+plt.axvline(stats["Mean"], linestyle="--", linewidth=2, label=f"Mean = {stats['Mean']:.0f}")
+plt.axvline(stats["Median"], linestyle="-", linewidth=2, label=f"Median = {stats['Median']:.0f}")
+
+plt.text(
+    0.02, 0.98,
+    stats_text,
+    transform=plt.gca().transAxes,
+    verticalalignment="top",
+    bbox=dict(boxstyle="round", alpha=0.9)
+)
+
+plt.title("Maximum Dips in YouTube Subs Daily Difference per Song")
+plt.xlabel("Daily Difference")
+plt.ylabel("Frequency")
+plt.show()
+
+#%%
+
+# import numpy as np
+# import pandas as pd
+
+# BIN_TABLE = {
+#     "youtube_subs": [
+#         (0,            1_000,          "0–1K",        0.75),
+#         (1_000,        10_000,         "1K–10K",      0.50),
+#         (10_000,       100_000,        "10K–100K",    0.50),
+#         (100_000,      1_000_000,      "100K–1M",     0.30),
+#         (1_000_000,    10_000_000,     "1M–10M",      0.20),
+#         (10_000_000,   100_000_000,    "10M–100M",    0.10),
+#         (100_000_000,  1_000_000_000,  "100M–1B",     0.05),
+#         (1_000_000_000,10_000_000_000, "1B–10B",      0.02),
+#     ],
+#     "youtube_views": [
+#         (0,            1_000,          "0–1K",        0.75),
+#         (1_000,        10_000,         "1K–10K",      0.75),
+#         (10_000,       100_000,        "10K–100K",    0.75),
+#         (100_000,      1_000_000,      "100K–1M",     0.50),
+#         (1_000_000,    10_000_000,     "1M–10M",      0.30),
+#         (10_000_000,   100_000_000,    "10M–100M",    0.20),
+#         (100_000_000,  1_000_000_000,  "100M–1B",     0.10),
+#         (1_000_000_000,10_000_000_000, "1B–10B",      0.05),
+#     ],
+#     "tiktok_followers": [
+#         (0,            1_000,          "0–1K",        0.75),
+#         (1_000,        10_000,         "1K–10K",      0.50),
+#         (10_000,       100_000,        "10K–100K",    0.50),
+#         (100_000,      1_000_000,      "100K–1M",     0.30),
+#         (1_000_000,    10_000_000,     "1M–10M",      0.30),
+#         (10_000_000,   100_000_000,    "10M–100M",    0.10),
+#         (100_000_000,  1_000_000_000,  "100M–1B",     0.05),
+#         (1_000_000_000,10_000_000_000, "1B–10B",      0.02),
+#     ],
+#     "tiktok_likes": [
+#         (0,            1_000,          "0–1K",        0.75),
+#         (1_000,        10_000,         "1K–10K",      0.75),
+#         (10_000,       100_000,        "10K–100K",    0.75),
+#         (100_000,      1_000_000,      "100K–1M",     0.50),
+#         (1_000_000,    10_000_000,     "1M–10M",      0.30),
+#         (10_000_000,   100_000_000,    "10M–100M",    0.20),
+#         (100_000_000,  1_000_000_000,  "100M–1B",     0.10),
+#         (1_000_000_000,10_000_000_000, "1B–10B",      0.05),
+#     ],
+#     "ig_followers": [
+#         (0,            1_000,          "0–1K",        0.75),
+#         (1_000,        10_000,         "1K–10K",      0.50),
+#         (10_000,       100_000,        "10K–100K",    0.50),
+#         (100_000,      1_000_000,      "100K–1M",     0.30),
+#         (1_000_000,    10_000_000,     "1M–10M",      0.30),
+#         (10_000_000,   100_000_000,    "10M–100M",    0.10),
+#         (100_000_000,  1_000_000_000,  "100M–1B",     0.05),
+#         (1_000_000_000,10_000_000_000, "1B–10B",      0.02),
+#     ],
+# }
+
+# def assign_bin_and_threshold(value, metric_key):
+#     """
+#     Returns (interval_name, allowed_drop_fraction)
+#     """
+#     for low, high, label, frac in BIN_TABLE[metric_key]:
+#         if low <= value < high:
+#             return label, frac
+#     return np.nan, np.nan
+
+# def flag_drops_with_bins(df, metric_key, level_col, daily_diff_col):
+#     df = df.copy()
+
+#     # Assign bin, threshold for each row
+#     df[["interval", "allowed_frac_drop"]] = df[level_col].apply(
+#         lambda x: pd.Series(assign_bin_and_threshold(x, metric_key))
+#     )
+
+#     # Compute actual fractional drop
+#     df["actual_frac_drop"] = df.apply(
+#         lambda r: (-r[daily_diff_col] / max(r[level_col], 1)) if r[daily_diff_col] < 0 else 0,
+#         axis=1
+#     )
+
+#     # Flag drops
+#     df["is_excessive_drop"] = (
+#         (df[daily_diff_col] < 0) & 
+#         (df["actual_frac_drop"] > df["allowed_frac_drop"])
+#     )
+
+#     # Song_ids with violations
+#     flagged_songs = df.loc[df["is_excessive_drop"], "song_id"].unique()
+
+#     return df, flagged_songs
+
+# #%%
+
+# clean_yt, bad_yt = flag_drops_with_bins(
+#     yt_pre12_clean,
+#     metric_key="youtube_views",
+#     level_col="views",
+#     daily_diff_col="yt_views_diff_daily"
+# )
+
+# bad_yt
+
+# #%%
+
+# for i, song_id in enumerate(reversed(bad_yt)):
+#     song_df = yt_pre12_clean[yt_pre12_clean['song_id'] == song_id].copy()
+#     song_df = song_df.sort_values('date')
+
+#     ig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+
+#     # Likes
+#     axes[0].plot(
+#         song_df['date'],
+#         song_df['views'],
+#         linewidth=1.5
+#     )
+#     axes[0].set_title(f"View Count: {song_id}")
+#     axes[0].set_ylabel("Count")
+#     axes[0].grid(alpha=0.3)
+
+#     # Upload
+#     axes[1].plot(
+#         song_df['date'],
+#         song_df['subs'],
+#         linewidth=1.5
+#     )
+#     axes[1].set_title(f"Sub Count: {song_id}")
+#     axes[1].set_xlabel("Date")
+#     axes[1].set_ylabel("Count")
+#     axes[1].grid(alpha=0.3)
+
+#     plt.tight_layout()
+#     plt.show()
+
+#     if i >= 20:
+#         break
+
+# #%%
+
+# """
+# ['Alex Warren',
+#  'Zach Top',
+#  'BigXthaPlug', (FAKE DATA)
+#  'Cris Mj',
+#  'd4vd',
+#  'Ivan Cornejo',
+#  'Ty Myers',
+#  'Tommy Richman',
+#  'Artemas',
+#  'JT',
+#  'Addison Rae', (REAL DATA)
+#  'Lay Bankz',
+#  'Tucker Wetmore',
+#  'PARTYNEXTDOOR',
+#  'Morgan Wallen', (FAKE DATA)
+#  'Yeat', 
+#  'Max McNown',
+#  'Forrest Frank',
+#  'ATEEZ',
+#  'Myles Smith',
+#  'Parker McCollum', (Parker McCollum)
+#  'Gigi Perez',
+#  'The Kid LAROI', (Don't Know)
+#  'Mitski',
+#  'Koe Wetzel',
+#  'Bryson Tiller',
+#  'The Marias',
+#  'Muni Long',
+#  'Warren Zeiders',
+#  'Benson Boone', (Don't Know)
+#  'Odetari']
+#  """
+
+# #%%
+
+# clean_sub_yt, bad_sub_yt = flag_drops_with_bins(
+#     yt_pre12_clean,
+#     metric_key="youtube_subs",
+#     level_col="subs",
+#     daily_diff_col="yt_subs_diff_daily"
+# )
+
+# bad_sub_yt
+
+# #%%
+
+# clean_tt, bad_tt = flag_drops_with_bins(
+#     tt_pre12_clean,
+#     metric_key="tiktok_followers",
+#     level_col="followers",
+#     daily_diff_col="tt_followers_diff_daily"
+# )
+
+# bad_tt
+
+# #%%
+
+# for song_id in bad_tt:
+#     song_df = tt_pre12_clean[tt_pre12_clean['song_id'] == song_id].copy()
+#     song_df = song_df.sort_values('date')
+
+#     fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+
+#     # Likes
+#     axes[0].plot(
+#         song_df['date'],
+#         song_df['followers'],
+#         linewidth=1.5
+#     )
+#     axes[0].set_title(f"All-Time TikTok Follower Count: {song_id}")
+#     axes[0].set_ylabel("Follower Count")
+#     axes[0].grid(alpha=0.3)
+
+#     # Upload
+#     axes[1].plot(
+#         song_df['date'],
+#         song_df['uploads'],
+#         linewidth=1.5
+#     )
+#     axes[1].set_title(f"Upload Count: {song_id}")
+#     axes[1].set_xlabel("Date")
+#     axes[1].set_ylabel("Count")
+#     axes[1].grid(alpha=0.3)
+
+
+#     plt.tight_layout()
+#     plt.show()
+
+# #%%
+
+# clean_tt, bad_tt = flag_drops_with_bins(
+#     tt_pre12_clean,
+#     metric_key="tiktok_likes",
+#     level_col="likes",
+#     daily_diff_col="tt_likes_diff_daily"
+# )
+
+# bad_tt
+
+# # %%
+
+# for song_id in bad_tt:
+#     song_df = tt_pre12_clean[tt_pre12_clean['song_id'] == song_id].copy()
+#     song_df = song_df.sort_values('date')
+
+#     fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+
+#     # Likes
+#     axes[0].plot(
+#         song_df['date'],
+#         song_df['likes'],
+#         linewidth=1.5
+#     )
+#     axes[0].set_title(f"All-Time TikTok Like Count: {song_id}")
+#     axes[0].set_ylabel("Like Count")
+#     axes[0].grid(alpha=0.3)
+
+#     # Upload
+#     axes[1].plot(
+#         song_df['date'],
+#         song_df['uploads'],
+#         linewidth=1.5
+#     )
+#     axes[1].set_title(f"Upload Count: {song_id}")
+#     axes[1].set_xlabel("Date")
+#     axes[1].set_ylabel("Count")
+#     axes[1].grid(alpha=0.3)
+
+#     plt.tight_layout()
+#     plt.show()
+
+# #%%
+
+# clean_ig, bad_ig = flag_drops_with_bins(
+#     ig_pre12_clean,
+#     metric_key="ig_followers",
+#     level_col="followers",
+#     daily_diff_col="ig_followers_diff_daily"
+# )
+
+# bad_ig
+
+# #%%
+
+# for song_id in bad_ig:
+#     song_df = ig_pre12_clean[ig_pre12_clean['song_id'] == song_id].copy()
+#     song_df['date'] = pd.to_datetime(song_df['date'])
+#     song_df = song_df.sort_values('date')
+
+#     import matplotlib.dates as mdates
+
+#     fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+
+#     # Likes
+#     axes[0].plot(
+#         song_df['date'],
+#         song_df['followers'],
+#         linewidth=1.5
+#     )
+#     axes[0].set_title(f"All-Time Instagram Follower Count: {song_id}")
+#     axes[0].set_ylabel("Follower Count")
+#     axes[0].grid(alpha=0.3)
+
+#     # Upload
+#     axes[1].plot(
+#         song_df['date'],
+#         song_df['media'],
+#         linewidth=1.5
+#     )
+#     axes[1].set_title(f"Upload Count: {song_id}")
+#     axes[1].set_xlabel("Date")
+#     axes[1].set_ylabel("Count")
+#     axes[1].grid(alpha=0.3)
+
+#     axes[1].xaxis.set_major_locator(mdates.MonthLocator())
+#     axes[1].xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+    
+#     plt.tight_layout()
+#     plt.show()
+
+# #%%
+
+# df = tt_pre12_clean[tt_pre12_clean['song_id'] == "Agora Hills — Doja Cat"]
+# df['date'] = pd.to_datetime(df['date'])
+# df[df['date'].dt.year == 2023].sort_values(by="date")
+
+#%%
+
+ig_pre12_clean.to_csv("data/processed_data/12m_ig_pre_release_imputed.csv", index=False)
+tt_pre12_clean.to_csv("data/processed_data/12m_tt_pre_release_imputed.csv", index=False)
+yt_pre12_clean.to_csv("data/processed_data/12m_yt_pre_release_imputed.csv", index=False)
+
+ig_post2w.to_csv("data/processed_data/2w_ig_post_release_imputed.csv", index=False)
+tt_post2w.to_csv("data/processed_data/2w_tt_post_release_imputed.csv", index=False)
+yt_post2w.to_csv("data/processed_data/2w_yt_post_release_imputed.csv", index=False)
 
 #%%

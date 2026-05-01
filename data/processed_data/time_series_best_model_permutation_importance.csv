@@ -1,0 +1,181 @@
+feature,importance_mean,importance_std
+log_ig_followers_release_date,0.09130256068642986,0.00931087204654996
+yt_views_streak_balance_30d,0.025816256666719883,0.005526781774690796
+Country,0.02381867554226858,0.0049399532202324915
+tt_followers_post2w_pos_streak,0.020845915466184854,0.004037963397869394
+K-Pop,0.020743143374466273,0.0042633338953946736
+Pop,0.019709633882036254,0.00468324595446398
+Hip-Hop/Rap,0.016153884435827288,0.003357782265337806
+Latin,0.008907209128103121,0.0025132886728523106
+log_tt_followers_release_date,0.007657151880233537,0.0021726140094172454
+tt_uploads_recency_cv_30_over_90,0.005738222065198939,0.0019279669705625077
+ig_media_streak_balance_30d,0.004738011767076733,0.0018475361752174045
+ig_followers_30d_pct_change_over_tt_likes_30d_pct_change,0.004686960094540243,0.001666392050865462
+Rock,0.0041087535619707015,0.0015149281494634245
+R&B/Soul,0.0036453294790464662,0.001677496208413809
+tt_likes_per_upload,0.0035546470263557286,0.0020272911885566352
+Holiday,0.0035125807923197415,0.0016217717870149887
+has_ig,0.003194184816404655,0.001327685496762753
+Metal,0.0027170359722711313,0.0011712819270592956
+tt_uploads_365d_min,0.0022139985276414254,0.001245367640681613
+tt_followers_180d_pos_streak,0.002100784664565941,0.0010193245426960969
+tt_uploads_full_min,0.002032781418147156,0.001174556087308481
+Alternative,0.0019343268175485485,0.0011888477944785928
+ig_media_stagnation_over_level_30d,0.0018518650566774152,0.0014069987675030446
+Rap,0.0018391586168470865,0.0008510374186797371
+tt_uploads_recency_std_30_over_90,0.0017923670910731215,0.0011131212971062154
+yt_subs_post2w_cv,0.0014791805975429562,0.0006764192388456704
+tt_uploads_365d_nonpos_streak,0.0012935201027931276,0.0007123027213843177
+ig_media_recency_cv_30_over_90,0.001261548691988601,0.000875719774517673
+tt_uploads_full_nonpos_streak,0.0012069085414725567,0.0006814666195229607
+Jazz,0.0011903586033737423,0.0007942922475514983
+Alte,0.0011190655037036812,0.0007586145995604691
+Traditional Country,0.001106353857014053,0.0009013830777199715
+Bass,0.001027185359627736,0.0006591270653755728
+House,0.0009659331081611156,0.0006324466146860802
+ig_media_365d_nonpos_streak,0.0005778512182775753,0.0007042841461635295
+ig_media_full_nonpos_streak,0.0005367057884177129,0.0006702310221163814
+song_length,0.0005273450222038623,0.0002888419134726043
+Indie Pop,0.0005173788958743097,0.0005386447135706842
+ig_media_90d_nonpos_streak,0.0004900503947340262,0.0005572520314921988
+Hip-Hop,0.00048060672644648084,0.0003488374420645237
+Música Mexicana,0.0004130605260702025,0.000293424392964948
+ig_followers_recency_mean_30_over_90,0.0003698680457464076,0.00029862217353905743
+log_tt_uploads_release_date,0.0003481912317878866,0.0003606293259295313
+ig_media_recency_std_30_over_90,0.00034075426536861464,0.0003265553084211212
+Afro-Beat,0.00033771124446765335,0.00035591056751771406
+tt_uploads_90d_nonpos_streak,0.0003034931332182744,0.00030002174107689455
+Afro-fusion,0.0002914824155123508,0.0002705227232846966
+Worldwide,0.0002787887179446946,0.0002607449638135721
+tt_uploads_full_pos_streak,0.00027412343281214,0.00020044505972247926
+tt_uploads_365d_pos_streak,0.0002580819260169009,0.00019017926775205242
+Disney,0.00022346127710983765,0.00018700947865695362
+Musicals,0.00021250160357048076,0.0001794461013541195
+Neo-Soul,0.00018167111346771846,0.000212794577580104
+tt_followers_recency_mean_30_over_90,0.00016366215846712052,0.00015644356645648998
+tt_likes_recency_cv_30_over_90,0.00013053293684663902,0.0001710157277117912
+yt_views_per_sub,0.0001296024682138186,0.00019786943237051473
+Reggae,0.00011055538595431403,9.043914502080365e-05
+Singer/Songwriter,0.00010155745118174408,0.00015653358591335322
+tt_likes_release_date_over_tt_followers_release_date,9.325697611530792e-05,9.857367628854469e-05
+tt_likes_per_follower,8.250654668739976e-05,8.798824617304405e-05
+yt_subs_90d_pos_streak,6.280237439029723e-05,7.807956337838617e-05
+tt_followers_post2w_nonpos_streak,5.790776776234963e-05,7.215404102099713e-05
+Dance,4.928599690021129e-05,3.869048968105955e-05
+Christmas: Classic,4.805349139670456e-05,5.808072149050625e-05
+Oldies,4.5742096712919625e-05,5.541650000304485e-05
+Contemporary R&B,3.564170045857185e-05,0.0001667348173048273
+ig_followers_90d_last,0.0,0.0
+ig_media_30d_pct_min,0.0,0.0
+yt_views_90d_nonpos_streak,0.0,0.0
+ig_followers_30d_last,0.0,0.0
+ig_followers_post2w_pct_min,0.0,0.0
+tt_uploads_180d_pos_streak,0.0,0.0
+ig_followers_recency_mean_30_over_180,0.0,0.0
+tt_followers_365d_cv,0.0,0.0
+ig_media_90d_pct_min,0.0,0.0
+ig_followers_365d_last,0.0,0.0
+tt_followers_90d_cv,0.0,0.0
+ig_media_90d_drawdown,0.0,0.0
+ig_followers_full_last,0.0,0.0
+tt_followers_full_cv,0.0,0.0
+ig_followers_90d_cv,0.0,0.0
+ig_followers_180d_last,0.0,0.0
+ig_followers_norm_abs_change_90d,0.0,0.0
+tt_followers_recency_mean_30_over_180,0.0,0.0
+ig_media_30d_nonpos_streak,0.0,0.0
+ig_followers_post2w_min,0.0,0.0
+tt_followers_365d_pos_streak,0.0,0.0
+tt_followers_full_pos_streak,0.0,0.0
+ig_media_180d_pct_min,0.0,0.0
+yt_subs_streak_balance_90d,0.0,0.0
+tt_uploads_365d_diff_mean,0.0,0.0
+tt_uploads_full_diff_mean,0.0,0.0
+yt_subs_post2w_pct_mean,0.0,0.0
+tt_followers_30d_nonpos_streak,0.0,0.0
+ig_media_30d_drawdown,0.0,0.0
+ig_media_180d_drawdown,0.0,0.0
+tt_likes_recency_mean_30_over_180,0.0,0.0
+yt_views_30d_pos_streak,0.0,0.0
+tt_followers_norm_abs_change_90d,0.0,0.0
+ig_followers_post2w_last,0.0,0.0
+ig_followers_post2w_max,0.0,0.0
+tt_uploads_365d_slope,0.0,0.0
+tt_likes_recency_std_30_over_90,0.0,0.0
+tt_uploads_full_slope,0.0,0.0
+ig_followers_30d_cv,0.0,0.0
+ig_followers_post2w_mean,0.0,0.0
+log_ig_followers_release_date_x_ig_media_per_follower,0.0,0.0
+yt_views_post2w_pos_streak,0.0,0.0
+tt_uploads_full_abs_change,0.0,0.0
+tt_uploads_365d_abs_change,0.0,0.0
+ig_followers_post2w_cv,0.0,0.0
+ig_media_release_date_over_ig_followers_release_date,0.0,0.0
+ig_followers_norm_abs_change_30d,0.0,0.0
+tt_followers_streak_balance_90d,0.0,0.0
+yt_views_180d_nonpos_streak,0.0,0.0
+tt_followers_30d_pos_streak,0.0,0.0
+tt_uploads_90d_mean,0.0,0.0
+ig_followers_180d_cv,0.0,0.0
+Christian,0.0,0.0
+Pop Latino,0.0,0.0
+Original Score,0.0,0.0
+Indie Rock,0.0,0.0
+Hard Rock,0.0,0.0
+Hair Metal,0.0,0.0
+Grunge,0.0,0.0
+Folk,0.0,0.0
+Electronic,0.0,0.0
+Dirty South,0.0,0.0
+Contemporary Singer/Songwriter,0.0,0.0
+Contemporary Latin,0.0,0.0
+College Rock,0.0,0.0
+Christmas,0.0,0.0
+Children’s Music,0.0,0.0
+Urbano latino,0.0,0.0
+Britpop,0.0,0.0
+Arena Rock,0.0,0.0
+Afrobeats,0.0,0.0
+African,0.0,0.0
+Adult Alternative,0.0,0.0
+ig_media_per_follower,0.0,0.0
+log_tt_likes_per_upload,0.0,0.0
+log_yt_views_release_date,0.0,0.0
+log_yt_subs_release_date,0.0,0.0
+log_tt_likes_release_date,0.0,0.0
+log_ig_media_release_date,0.0,0.0
+has_yt,0.0,0.0
+has_tt,0.0,0.0
+Soundtrack,0.0,0.0
+ig_media_180d_nonpos_streak,0.0,0.0
+yt_views_post2w_nonpos_streak,0.0,0.0
+tt_uploads_180d_mean,0.0,0.0
+tt_uploads_180d_nonpos_streak,0.0,0.0
+tt_uploads_full_max,0.0,0.0
+tt_uploads_365d_max,0.0,0.0
+tt_followers_180d_cv,0.0,0.0
+tt_uploads_full_mean,0.0,0.0
+tt_uploads_365d_mean,0.0,0.0
+tt_followers_90d_pos_streak,0.0,0.0
+log_tt_uploads_release_date_x_tt_likes_per_follower,0.0,0.0
+ig_followers_365d_cv,0.0,0.0
+ig_followers_full_cv,0.0,0.0
+tt_uploads_180d_min,0.0,0.0
+tt_uploads_180d_max,0.0,0.0
+tt_uploads_30d_max,0.0,0.0
+tt_uploads_90d_max,0.0,0.0
+tt_uploads_post2w_min,0.0,0.0
+tt_uploads_30d_mean,0.0,0.0
+yt_views_30d_nonpos_streak,0.0,0.0
+tt_followers_release_date_over_ig_followers_release_date,0.0,0.0
+tt_uploads_90d_min,0.0,0.0
+tt_uploads_30d_min,0.0,0.0
+tt_uploads_full_last,0.0,0.0
+tt_uploads_30d_last,0.0,0.0
+tt_uploads_90d_last,0.0,0.0
+tt_uploads_365d_last,0.0,0.0
+tt_uploads_180d_last,0.0,0.0
+tt_uploads_post2w_max,0.0,0.0
+tt_uploads_post2w_mean,0.0,0.0
+tt_uploads_post2w_last,0.0,0.0
+ig_media_30d_pos_streak,0.0,0.0
